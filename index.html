@@ -436,11 +436,18 @@ const CONFIG = {
       try { document.execCommand("copy"); flash(); } catch (e) {} document.body.removeChild(t);
     }
   }
+  // Swish officiella länkformat (samma som i Swish QR-koder). Låsta fält när edit utelämnas.
+  // Android: intent-länk som pekar ut appen direkt, annars kan webbläsaren visa en
+  // installationssida trots att Swish finns. iOS: vanlig länk (universell länk).
   function swishUrl(nummer, belopp, meddelande) {
-    var payee = String(nummer).replace(/\D/g, "");
-    if (/^07\d{8}$/.test(payee)) payee = "46" + payee.slice(1);
-    var data = { version: 1, payee: { value: Number(payee), editable: false }, amount: { value: belopp, editable: false }, message: { value: meddelande, editable: false } };
-    return "swish://payment?data=" + encodeURIComponent(JSON.stringify(data));
+    var sw = String(nummer).replace(/\D/g, "");
+    if (/^46\d{9}$/.test(sw)) sw = "0" + sw.slice(2);
+    var q = "sw=" + sw + "&amt=" + encodeURIComponent(String(belopp)) + "&cur=SEK&msg=" + encodeURIComponent(meddelande) + "&src=qr";
+    var https = "https://app.swish.nu/1/p/sw/?" + q;
+    if (/Android/i.test(navigator.userAgent)) {
+      return "intent://app.swish.nu/1/p/sw/?" + q + "#Intent;scheme=https;package=se.bankgirot.swish;S.browser_fallback_url=" + encodeURIComponent(https) + ";end";
+    }
+    return https;
   }
 
   function renderDone(p, orderId, belopp) {
