@@ -65,6 +65,15 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  try {
+    return hanteraBestallning(e);
+  } catch (err) {
+    console.error(err);
+    return json({ ok: false, fel: "Tekniskt fel: " + (err && err.message ? err.message : err) + ". Hör av dig i lagets WhatsApp-grupp." });
+  }
+}
+
+function hanteraBestallning(e) {
   var d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json({ ok: false, fel: "Felaktig förfrågan." }); }
 
@@ -98,6 +107,7 @@ function doPost(e) {
     props.setProperty("NASTA_ORDER", String(nr + 1));
     id = ("000" + nr).slice(-4);
     var sh = SpreadsheetApp.getActive().getSheetByName(FLIK);
+    if (!sh) { setup(); sh = SpreadsheetApp.getActive().getSheetByName(FLIK); }
     sh.appendRow([new Date(), id, lag, barn, "'" + mobil, antal, belopp, ""]);
     SpreadsheetApp.flush();
   } finally {
