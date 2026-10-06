@@ -66,6 +66,7 @@ Gör en testbeställning och radera testraden i arket.
 - Varje beställning blir en rad i *Beställningar* med Order-ID (löpnummer 0001, 0002 …), antal och belopp.
 - Swish-meddelandet blir `Eskils 2019 försäljning <Order-ID>`. Kassören matchar på Order-ID och sätter kolumnen **Betald** till `JA`.
 - Sätt `AVBRUTEN` i samma kolumn för en beställning som ska bort. Den räknas då inte i mätaren.
+- **Via Telegram:** kör `startaTelegramKoll` en gång i Apps Script. Därefter har varje ny beställning knappen **✅ Markera betald**, och du kan skriva till boten: `betald 0001`, `avbruten 0001`, `ångra 0001` eller `status` (visar obetalda). Skriptet läser Telegram en gång i minuten, så svaret kan dröja upp till en minut. Bara meddelanden från `TELEGRAM_CHAT_ID` räknas. `stoppaTelegramKoll` stänger av det.
 - Mätaren visar **beställda** kakor, inte bara betalda, så den rör sig direkt.
 - Fliken *Översikt* räknar beställt, betalt, kartonger att beställa (à 24), beräknad faktura till Marabou och betalt minus faktura.
 
@@ -78,7 +79,7 @@ Gör en testbeställning och radera testraden i arket.
 3. **Inköpspriset 14,50 kr.** Det kommer från Marabous beställningssida. Kontrollera mot den faktiska offerten, eftersom mätaren för lagkassan räknar på det.
 4. **Kartonger.** Marabou levererar i kartonger om 24. Minimum 240 är 10 kartonger. 300 kakor blir 12,5, alltså 13 kartonger (312 kakor).
 5. **Personuppgifter.** Sidan samlar barnets förnamn och ett mobilnummer. Klubben är personuppgiftsansvarig, så stäm av med dem vem som får se arket.
-6. **Swish-knappen** använder Swish-appens länkformat `swish://payment?data=…` med fälten `version`, `payee`, `amount` och `message`. Det är hämtat från öppna exempel, inte från Swish officiella dokumentation, och jag har inte kunnat prova det på en riktig telefon. Ett annat format med fälten `v`, `d`, `amt` och `msg` gick inte att hitta i någon källa, så det används inte. Kopiera-knapparna fungerar alltid som reservlösning, så testa knappen på både iPhone och Android innan ni skickar ut länken.
+6. **Swish-knappen** använder Swish officiella länkformat `https://app.swish.nu/1/p/sw/?sw=…&amt=…&cur=SEK&msg=…&src=qr` (samma som i Swish QR-koder), med låsta fält. På Android blir det en `intent://`-länk som pekar ut Swish-appen direkt. Det tidigare formatet `swish://payment?data=…` gav "Felaktig länk" i Swish på iPhone. Kopiera-knapparna fungerar alltid som reservlösning. Testa knappen på både iPhone och Android innan ni skickar ut länken.
 
 ## Färger och logga
 
