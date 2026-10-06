@@ -24,9 +24,14 @@ var COL = { ANTAL: 6, BETALD: 8 }; // 1-baserade kolumner i RUBRIKER
 function setup() {
   var ss = SpreadsheetApp.getActive();
   var sh = ss.getSheetByName(FLIK) || ss.insertSheet(FLIK);
-  if (sh.getLastRow() === 0) sh.appendRow(RUBRIKER);
+  // Rubrikraden måste ligga på rad 1. Saknas den läggs den in ovanför befintliga rader.
+  if (sh.getRange(1, 1).getValue() !== RUBRIKER[0]) {
+    if (sh.getLastRow() > 0) sh.insertRowBefore(1);
+    sh.getRange(1, 1, 1, RUBRIKER.length).setValues([RUBRIKER]);
+  }
   sh.setFrozenRows(1);
   sh.getRange(1, 1, 1, RUBRIKER.length).setFontWeight("bold");
+  sh.getRange("B:B").setNumberFormat("@");
   sh.getRange("E:E").setNumberFormat("@");
   sh.getRange(2, COL.BETALD, sh.getMaxRows() - 1, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["JA", "AVBRUTEN"], true).setAllowInvalid(false).build());
@@ -107,8 +112,8 @@ function hanteraBestallning(e) {
     props.setProperty("NASTA_ORDER", String(nr + 1));
     id = ("000" + nr).slice(-4);
     var sh = SpreadsheetApp.getActive().getSheetByName(FLIK);
-    if (!sh) { setup(); sh = SpreadsheetApp.getActive().getSheetByName(FLIK); }
-    sh.appendRow([new Date(), id, lag, barn, "'" + mobil, antal, belopp, ""]);
+    if (!sh || sh.getRange(1, 1).getValue() !== RUBRIKER[0]) { setup(); sh = SpreadsheetApp.getActive().getSheetByName(FLIK); }
+    sh.appendRow([new Date(), "'" + id, lag, barn, "'" + mobil, antal, belopp, ""]);
     SpreadsheetApp.flush();
   } finally {
     lock.releaseLock();
