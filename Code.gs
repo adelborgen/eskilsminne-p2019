@@ -36,29 +36,47 @@ function setup() {
   sh.getRange(2, COL.BETALD, sh.getMaxRows() - 1, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["JA", "AVBRUTEN"], true).setAllowInvalid(false).build());
 
+  uppdateraOversikt();
+}
+
+// Översikten räknas här i skriptet i stället för med formler, så att den fungerar
+// oavsett arkets språk (svenska ark vill ha semikolon i formler, engelska komma).
+// Uppdateras vid varje beställning, när någon ändrar i arket och vid Telegram-kommandon.
+function uppdateraOversikt() {
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName(FLIK);
+  var rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, RUBRIKER.length).getValues() : [];
+  var bestallt = 0, betalt = 0, betaltKr = 0;
+  rows.forEach(function (r) {
+    var b = String(r[COL.BETALD - 1]).toUpperCase(), n = Number(r[COL.ANTAL - 1]) || 0;
+    if (b === "AVBRUTEN") return;
+    bestallt += n;
+    if (b === "JA") { betalt += n; betaltKr += Number(r[6]) || 0; }
+  });
+  var kartonger = Math.ceil(bestallt / CFG.KARTONG);
+  var faktura = kartonger * CFG.KARTONG * CFG.INKOPSPRIS;
+  var rader = [
+    ["Beställt (kakor)", bestallt],
+    ["Betalt (kakor)", betalt],
+    ["Betalt (kr)", betaltKr],
+    ["Minimum till Marabou", CFG.MINIMUM],
+    ["Minimum nått?", bestallt >= CFG.MINIMUM ? "JA" : "NEJ, " + (CFG.MINIMUM - bestallt) + " kvar"],
+    ["Kartonger att beställa (à " + CFG.KARTONG + ")", kartonger],
+    ["Kakor i kartongerna", kartonger * CFG.KARTONG],
+    ["Beräknad faktura Marabou (kr)", faktura],
+    ["Betalt minus faktura (kr)", betaltKr - faktura],
+    ["Uppdaterad", new Date()]
+  ];
   var ov = ss.getSheetByName(OVERSIKT) || ss.insertSheet(OVERSIKT);
   ov.clear();
-  var B = "'" + FLIK + "'!";
-  var rader = [
-    ["Beställt (kakor)", "=SUMIF(" + B + "H2:H,\"<>AVBRUTEN\"," + B + "F2:F)"],
-    ["Betalt (kakor)", "=SUMIF(" + B + "H2:H,\"JA\"," + B + "F2:F)"],
-    ["Betalt (kr)", "=SUMIF(" + B + "H2:H,\"JA\"," + B + "G2:G)"],
-    ["Minimum till Marabou", CFG.MINIMUM],
-    ["Minimum nått?", "=IF(B1>=B4,\"JA\",\"NEJ, \"&(B4-B1)&\" kvar\")"],
-    ["Kartonger att beställa (à " + CFG.KARTONG + ")", "=CEILING(B1/" + CFG.KARTONG + ",1)"],
-    ["Kakor i kartongerna", "=B6*" + CFG.KARTONG],
-    ["Beräknad faktura Marabou (kr)", "=B7*" + CFG.INKOPSPRIS],
-    ["Betalt minus faktura (kr)", "=B3-B8"]
-  ];
-  // Formler via setFormula: engelsk syntax med komma fungerar oavsett arkets språk
-  // (setValues tolkar formler enligt arkets språk, och svenska ark vill ha semikolon).
-  rader.forEach(function (r, i) {
-    ov.getRange(i + 1, 1).setValue(r[0]);
-    if (typeof r[1] === "string" && r[1].charAt(0) === "=") ov.getRange(i + 1, 2).setFormula(r[1]);
-    else ov.getRange(i + 1, 2).setValue(r[1]);
-  });
+  ov.getRange(1, 1, rader.length, 2).setValues(rader);
   ov.getRange(1, 1, rader.length, 1).setFontWeight("bold");
   ov.autoResizeColumn(1);
+}
+
+// Körs automatiskt när någon ändrar i arket för hand, till exempel skriver JA under Betald.
+function onEdit(e) {
+  if (e && e.range && e.range.getSheet().getName() === FLIK) uppdateraOversikt();
 }
 
 function testTelegram() {
@@ -121,6 +139,7 @@ function hanteraBestallning(e) {
     if (!sh || sh.getRange(1, 1).getValue() !== RUBRIKER[0]) { setup(); sh = SpreadsheetApp.getActive().getSheetByName(FLIK); }
     sh.appendRow([new Date(), "'" + id, lag, barn, "'" + mobil, antal, belopp, ""]);
     SpreadsheetApp.flush();
+    uppdateraOversikt();
   } finally {
     lock.releaseLock();
   }
@@ -245,6 +264,7 @@ function satStatus(id, varde) {
   for (var i = 0; i < rows.length; i++) {
     if (parseInt(rows[i][1], 10) === nr) {
       sh.getRange(i + 2, COL.BETALD).setValue(varde);
+      uppdateraOversikt();
       return { id: ("000" + nr).slice(-4), barn: rows[i][3], antal: rows[i][COL.ANTAL - 1], belopp: rows[i][6] };
     }
   }
