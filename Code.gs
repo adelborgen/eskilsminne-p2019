@@ -128,7 +128,8 @@ function hanteraBestallning(e) {
 
   try {
     telegram("🍫 Ny beställning " + id + " (" + lag + ")\n" + barn + ": " + antal + " st = " + belopp + " kr\n" +
-             "Totalt beställt: " + raknaBestallt(lag) + " kakor");
+             "Totalt beställt: " + raknaBestallt(lag) + " kakor",
+             { inline_keyboard: [[{ text: "✅ Markera betald", callback_data: "betald:" + id }]] });
   } catch (err) { /* beställningen är sparad även om Telegram inte svarar */ }
 
   return json({ ok: true, id: id, belopp: belopp });
@@ -152,14 +153,117 @@ function normalizeMobil(s) {
   return s;
 }
 
-function telegram(text) {
+function telegram(text, knappar) {
+  var payload = { chat_id: tg().chat, text: text };
+  if (knappar) payload.reply_markup = JSON.stringify(knappar);
+  return tgApi("sendMessage", payload);
+}
+
+function tg() {
   var props = PropertiesService.getScriptProperties();
   var token = props.getProperty("TELEGRAM_BOT_TOKEN"), chat = props.getProperty("TELEGRAM_CHAT_ID");
   if (!token || !chat) throw new Error("TELEGRAM_BOT_TOKEN eller TELEGRAM_CHAT_ID saknas i Skriptegenskaper.");
-  var res = UrlFetchApp.fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
-    method: "post", payload: { chat_id: chat, text: text }, muteHttpExceptions: true
+  return { token: token, chat: String(chat).trim() };
+}
+
+function tgApi(metod, payload) {
+  var res = UrlFetchApp.fetch("https://api.telegram.org/bot" + tg().token + "/" + metod, {
+    method: "post", payload: payload, muteHttpExceptions: true
   });
   if (res.getResponseCode() !== 200) throw new Error("Telegram svarade " + res.getResponseCode() + ": " + res.getContentText());
+  return JSON.parse(res.getContentText()).result;
+}
+
+/* ---------- Betalningar via Telegram ----------
+   Kör startaTelegramKoll en gång från redigeraren. Sedan läser skriptet varje minut
+   vad du har tryckt eller skrivit till boten:
+     knappen "✅ Markera betald" under en beställning
+     betald 0001     avbruten 0001     ångra 0001     status
+   Bara meddelanden från TELEGRAM_CHAT_ID räknas. */
+function startaTelegramKoll() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === "kollaTelegram") ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger("kollaTelegram").timeBased().everyMinutes(1).create();
+  telegram("Klart! Tryck på ✅ under en beställning, eller skriv till exempel \"betald 0001\", \"avbruten 0001\", \"ångra 0001\" eller \"status\".");
+}
+
+function stoppaTelegramKoll() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === "kollaTelegram") ScriptApp.deleteTrigger(t);
+  });
+}
+
+function kollaTelegram() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return;
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var offset = Number(props.getProperty("TG_OFFSET") || 0);
+    var chat = tg().chat;
+    var updates = tgApi("getUpdates", { offset: offset, timeout: 0, allowed_updates: JSON.stringify(["message", "callback_query"]) });
+    updates.forEach(function (u) {
+      props.setProperty("TG_OFFSET", String(u.update_id + 1));
+      try {
+        if (u.callback_query) {
+          var cq = u.callback_query, m = cq.message;
+          if (!m || String(m.chat.id) !== chat) return;
+          var id = String(cq.data || "").replace(/^betald:/, "");
+          var r = satStatus(id, "JA");
+          tgApi("answerCallbackQuery", { callback_query_id: cq.id, text: r ? "Order " + r.id + " markerad som betald" : "Hittar inte order " + id });
+          if (r) tgApi("editMessageText", { chat_id: chat, message_id: m.message_id, text: m.text + "\n\n✅ Betald" });
+        } else if (u.message && u.message.text && String(u.message.chat.id) === chat) {
+          telegram(svaraPaKommando(u.message.text));
+        }
+      } catch (err) { console.error(err); }
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function svaraPaKommando(text) {
+  var t = String(text).trim().toLowerCase();
+  var m = t.match(/^(betald|betalt|avbruten|avbryt|ångra|angra)\s+#?(\d+)$/);
+  if (m) {
+    var varde = /^betal/.test(m[1]) ? "JA" : /^avbr/.test(m[1]) ? "AVBRUTEN" : "";
+    var r = satStatus(m[2], varde);
+    if (!r) return "Hittar ingen order " + m[2] + ".";
+    return "Order " + r.id + " (" + r.barn + ", " + r.antal + " st, " + r.belopp + " kr): " +
+      (varde === "JA" ? "✅ betald" : varde === "AVBRUTEN" ? "❌ avbruten" : "↩️ obetald igen");
+  }
+  if (t === "status" || t === "/status") return statusText();
+  return "Skriv till exempel \"betald 0001\", \"avbruten 0001\", \"ångra 0001\" eller \"status\".";
+}
+
+// Sätter kolumnen Betald för en order. Returnerar orderns uppgifter, eller null om den inte finns.
+function satStatus(id, varde) {
+  var nr = parseInt(id, 10);
+  var sh = SpreadsheetApp.getActive().getSheetByName(FLIK);
+  if (!sh || isNaN(nr) || sh.getLastRow() < 2) return null;
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, RUBRIKER.length).getValues();
+  for (var i = 0; i < rows.length; i++) {
+    if (parseInt(rows[i][1], 10) === nr) {
+      sh.getRange(i + 2, COL.BETALD).setValue(varde);
+      return { id: ("000" + nr).slice(-4), barn: rows[i][3], antal: rows[i][COL.ANTAL - 1], belopp: rows[i][6] };
+    }
+  }
+  return null;
+}
+
+function statusText() {
+  var sh = SpreadsheetApp.getActive().getSheetByName(FLIK);
+  var rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, RUBRIKER.length).getValues() : [];
+  var bestallt = 0, betalt = 0, obetalda = [];
+  rows.forEach(function (r) {
+    var b = String(r[COL.BETALD - 1]).toUpperCase(), n = Number(r[COL.ANTAL - 1]) || 0;
+    if (b === "AVBRUTEN") return;
+    bestallt += n;
+    if (b === "JA") betalt += n;
+    else obetalda.push(("000" + parseInt(r[1], 10)).slice(-4) + " " + r[3] + " (" + r[6] + " kr)");
+  });
+  return "Beställt: " + bestallt + " kakor\nBetalt: " + betalt + " kakor\n" +
+    (obetalda.length ? "Obetalda:\n" + obetalda.join("\n") : "Alla är betalda 🎉");
 }
 
 function json(o) {

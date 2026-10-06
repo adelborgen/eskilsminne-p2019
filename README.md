@@ -66,6 +66,7 @@ Gör en testbeställning och radera testraden i arket.
 - Varje beställning blir en rad i *Beställningar* med Order-ID (löpnummer 0001, 0002 …), antal och belopp.
 - Swish-meddelandet blir `Eskils 2019 försäljning <Order-ID>`. Kassören matchar på Order-ID och sätter kolumnen **Betald** till `JA`.
 - Sätt `AVBRUTEN` i samma kolumn för en beställning som ska bort. Den räknas då inte i mätaren.
+- **Via Telegram:** kör `startaTelegramKoll` en gång i Apps Script. Därefter har varje ny beställning knappen **✅ Markera betald**, och du kan skriva till boten: `betald 0001`, `avbruten 0001`, `ångra 0001` eller `status` (visar obetalda). Skriptet läser Telegram en gång i minuten, så svaret kan dröja upp till en minut. Bara meddelanden från `TELEGRAM_CHAT_ID` räknas. `stoppaTelegramKoll` stänger av det.
 - Mätaren visar **beställda** kakor, inte bara betalda, så den rör sig direkt.
 - Fliken *Översikt* räknar beställt, betalt, kartonger att beställa (à 24), beräknad faktura till Marabou och betalt minus faktura.
 
