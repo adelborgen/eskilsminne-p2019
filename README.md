@@ -1,1 +1,84 @@
-# eskilsminne-p2019
+# Eskilsminne försäljning (P2019): ett formulär, två mätare, Swish
+
+En enkel sida med två flikar: **Beställ** och **Vanliga frågor**. Föräldern väljer antal kakor, beställer och får en bekräftelse med Swish-instruktioner. Överst på Beställ visas två mätare för hela laget:
+
+1. **Beställt**: antal kakor mot målet 300. Beställs 300 eller fler gör laget något extra för barnen redan vid avslutningen före jul, och det står i mätaren.
+2. **Direkt till lagkassan**: 30 kr − 14,50 kr = 15,50 kr per kaka, summerat.
+
+Minimum 240 (vad vi behöver för att kunna beställa från Marabou) nämns bara i en fråga under Vanliga frågor, inte i mätare, formulär eller kvitto.
+
+Tre delar, alla gratis:
+
+- **index.html**: sidan föräldrarna ser.
+- **Code.gs**: Google Apps Script som tar emot beställningen, räknar ut beloppet, sparar den i ett kalkylark och skickar ett meddelande till Telegram.
+- **Hosting**: Netlify Drop, Cloudflare Pages eller GitHub Pages.
+
+Tid: ca 30 minuter första gången. Den tidigare versionen med flikar (Hem, Lagkassa, Frågor, produktmeny) ligger kvar i mappen `arkiv-v3-flera-flikar`.
+
+## 1. Kalkylark + Apps Script
+
+1. Skapa ett nytt Google Kalkylark, till exempel "Beställningar P2019".
+2. **Tillägg → Apps Script**. Ta bort befintlig kod, klistra in hela `Code.gs` och spara.
+3. Välj funktionen `setup` och tryck **Kör**. Godkänn behörigheterna. Flikarna *Beställningar* och *Översikt* skapas.
+
+## 2. Telegram-bot
+
+1. I Telegram: sök **@BotFather**, skriv `/newbot`, kopiera **token**.
+2. Skapa en grupp för tränarna, lägg till boten och skriv ett meddelande.
+3. Öppna `https://api.telegram.org/bot<DIN_TOKEN>/getUpdates` i webbläsaren och leta upp `"chat":{"id":-123...}`. Det negativa numret är **chat-id**.
+4. I Apps Script: **Projektinställningar → Skriptegenskaper**, lägg till `TELEGRAM_BOT_TOKEN` och `TELEGRAM_CHAT_ID`.
+5. Kör `testTelegram`. Meddelandet ska dyka upp i gruppen.
+
+Dela aldrig token i chatten eller i koden. Läcker den: `/revoke` hos BotFather.
+
+## 3. Publicera som webbapp
+
+1. **Distribuera → Ny distribution → Webbapp**. *Kör som:* **Jag**. *Åtkomst:* **Alla**.
+2. Kopiera webbappens URL (slutar på `/exec`).
+3. **Efter varje ändring i Code.gs:** Distribuera → Hantera distributioner → redigera → Ny version.
+
+Åtkomst "Alla" betyder att vem som helst med adressen kan skicka data. Därför räknar servern själv ut beloppet, kontrollerar allt (lag, antal, mobilnummer) och har honeypot, tidsspärr och spärr per mobilnummer.
+
+## 4. Fyll i och lägg ut sidan
+
+Öppna `index.html` och ändra i rutan `CONFIG` högst upp:
+
+| Inställning | Värde |
+|---|---|
+| `endpoint` | URL:en från steg 3 |
+| `swish.nummer` | Swish-numret som pengarna ska till (just nu satt till ett privat mobilnummer, se nedan) |
+| `swish.namnPaKonto` | Valfritt: mottagarens namn, så föräldern ser att det stämmer |
+| `swish.meddelande` | Förifylld text i Swish, följd av ordernumret. Nu: `Eskils 2019 försäljning` |
+| `pris`, `inkopspris`, `minimum`, `mal` | 30, 14,5, 240, 300 |
+| `belonning` | Texten om vad som händer vid 300 (`{mal}` fylls i automatiskt) |
+| `faq` | Frågorna och svaren. `{pris}`, `{mal}` och `{minimum}` fylls i automatiskt |
+
+Samma värden finns i `CFG` överst i Code.gs (`PRIS`, `INKOPSPRIS`, `MINIMUM`). Ändrar ni i det ena, ändra i det andra. Sedan lägger ni mappen på Netlify Drop (app.netlify.com/drop) eller liknande. Gör en testbeställning och radera testraden i arket.
+
+## Hantera betalningar
+
+- Varje beställning blir en rad i *Beställningar* med Order-ID, antal och belopp.
+- Swish-meddelandet blir `Eskils 2019 försäljning <Order-ID>`. Kassören matchar på Order-ID och sätter kolumnen **Betald** till `JA`.
+- Sätt `AVBRUTEN` för en beställning som ska bort. Den räknas då inte i mätaren.
+- Mätaren visar **beställda** kakor, inte bara betalda, så den rör sig direkt.
+- Fliken *Översikt* räknar beställt, betalt, kartonger att beställa (à 24), beräknad faktura till Marabou och betalt minus faktura.
+
+## Innan ni går live: besluta
+
+0. **Belöningen vid 300.** Sidan lovar att laget gör något extra för barnen vid avslutningen före jul om 300 eller fler beställs. Bestäm vad det blir och att det ryms i lagkassan (vid 300 kakor kommer 4 650 kr in direkt). Texten ändras i `belonning` och i FAQ-frågan "Vad händer om vi når 300 kakor?".
+
+1. **Swish-nummer.** Numret är ett privat mobilnummer, så pengarna hamnar på ett privat konto och föräldrarna ser ägarens namn i Swish. Stäm av med Shaban och klubben att det är okej, och byt till klubbens eget nummer när kontot för P2019 är klart (en rad i `CONFIG`). Utan nummer visar bekräftelsen "Swish-uppgifter kommer inom kort".
+2. **Återbetalning.** Eftersom föräldrarna betalar före beställningen till Marabou står det på sidan att Swish betalas tillbaka om 240 inte nås. Bekräfta att det är vad ni vill, och vem som sköter återbetalningarna.
+3. **Inköpspriset 14,50 kr.** Det kommer från Marabous beställningssida. Kontrollera mot den faktiska offerten, eftersom mätaren för lagkassan räknar på det.
+4. **Kartonger.** Marabou levererar i kartonger om 24. Minimum 240 är 10 kartonger. 300 kakor blir 12,5, alltså 13 kartonger (312 kakor).
+5. **Personuppgifter.** Sidan samlar barnets förnamn och ett mobilnummer. Klubben är personuppgiftsansvarig, så stäm av med dem vem som får se arket.
+6. **Swish-knappen** använder Swish-appens länkformat `swish://payment?data=…` med fälten `version`, `payee`, `amount` och `message`. Det är hämtat från öppna exempel, inte från Swish officiella dokumentation, och jag har inte kunnat prova det på en riktig telefon. Ett annat format med fälten `v`, `d`, `amt` och `msg` gick inte att hitta i någon källa, så det används inte. Kopiera-knapparna fungerar alltid som reservlösning, så testa knappen på både iPhone och Android innan ni skickar ut länken.
+
+## Färger och logga
+
+- Blått `#174297` och gult `#faeb1e` kommer från en tredjepartssida som samlar klubbloggor, inte från klubben. Bekräfta mot klubbens grafiska profil. Byts i början av `<style>` (`--brand`, `--yellow`).
+- Loggan är klubbens varumärke och är inte inlagd. Be klubben om en fil och skriv filnamnet i `CONFIG.logo`.
+
+## Nästa årskull
+
+Kopiera mappen, byt `lag`, `swish` och `ALLOWED_LAG`, och skapa ett eget kalkylark och en egen Telegram-grupp.
