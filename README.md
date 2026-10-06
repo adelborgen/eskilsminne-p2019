@@ -48,7 +48,7 @@ Dela aldrig token i chatten eller i koden. Läcker den: `/revoke` hos BotFather.
 | Inställning | Värde |
 |---|---|
 | `endpoint` | URL:en från steg 3 |
-| `swish.nummer` | Swish-numret som pengarna ska till (just nu satt till ett privat mobilnummer, se nedan) |
+| `swish.nummer` | Swish-numret som pengarna ska till (nu Andreas Adelborgs nummer, se nedan) |
 | `swish.namnPaKonto` | Valfritt: mottagarens namn, så föräldern ser att det stämmer |
 | `swish.meddelande` | Förifylld text i Swish, följd av ordernumret. Nu: `Eskils 2019 försäljning` |
 | `pris`, `inkopspris`, `minimum`, `mal` | 30, 14,5, 240, 300 |
@@ -73,7 +73,7 @@ Gör en testbeställning och radera testraden i arket.
 
 0. **Belöningen vid 300.** Sidan lovar att laget gör något extra för barnen vid avslutningen före jul om 300 eller fler beställs. Bestäm vad det blir och att det ryms i lagkassan (vid 300 kakor kommer 4 650 kr in direkt). Texten ändras i `belonning` och i FAQ-frågan "Vad händer om vi når 300 kakor?".
 
-1. **Swish-nummer.** Numret är ett privat mobilnummer, så pengarna hamnar på ett privat konto och föräldrarna ser ägarens namn i Swish. Stäm av med Shaban och klubben att det är okej, och byt till klubbens eget nummer när kontot för P2019 är klart (en rad i `CONFIG`). Utan nummer visar bekräftelsen "Swish-uppgifter kommer inom kort".
+1. **Swish-nummer.** Andreas Adelborg tar emot betalningarna på sitt privata nummer 073 028 18 22. Mottagarens namn visas i bekräftelsen så att föräldrarna känner igen det i Swish. Byt till klubbens eget nummer om ett sådant kommer (`swish.nummer` och `swish.namnPaKonto` i `CONFIG`).
 2. **Återbetalning.** Eftersom föräldrarna betalar före beställningen till Marabou står det på sidan att Swish betalas tillbaka om 240 inte nås. Bekräfta att det är vad ni vill, och vem som sköter återbetalningarna.
 3. **Inköpspriset 14,50 kr.** Det kommer från Marabous beställningssida. Kontrollera mot den faktiska offerten, eftersom mätaren för lagkassan räknar på det.
 4. **Kartonger.** Marabou levererar i kartonger om 24. Minimum 240 är 10 kartonger. 300 kakor blir 12,5, alltså 13 kartonger (312 kakor).
