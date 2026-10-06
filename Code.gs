@@ -24,9 +24,14 @@ var COL = { ANTAL: 6, BETALD: 8 }; // 1-baserade kolumner i RUBRIKER
 function setup() {
   var ss = SpreadsheetApp.getActive();
   var sh = ss.getSheetByName(FLIK) || ss.insertSheet(FLIK);
-  if (sh.getLastRow() === 0) sh.appendRow(RUBRIKER);
+  // Rubrikraden måste ligga på rad 1. Saknas den läggs den in ovanför befintliga rader.
+  if (sh.getRange(1, 1).getValue() !== RUBRIKER[0]) {
+    if (sh.getLastRow() > 0) sh.insertRowBefore(1);
+    sh.getRange(1, 1, 1, RUBRIKER.length).setValues([RUBRIKER]);
+  }
   sh.setFrozenRows(1);
   sh.getRange(1, 1, 1, RUBRIKER.length).setFontWeight("bold");
+  sh.getRange("B:B").setNumberFormat("@");
   sh.getRange("E:E").setNumberFormat("@");
   sh.getRange(2, COL.BETALD, sh.getMaxRows() - 1, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["JA", "AVBRUTEN"], true).setAllowInvalid(false).build());
@@ -65,6 +70,15 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  try {
+    return hanteraBestallning(e);
+  } catch (err) {
+    console.error(err);
+    return json({ ok: false, fel: "Tekniskt fel: " + (err && err.message ? err.message : err) + ". Hör av dig i lagets WhatsApp-grupp." });
+  }
+}
+
+function hanteraBestallning(e) {
   var d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json({ ok: false, fel: "Felaktig förfrågan." }); }
 
@@ -98,7 +112,8 @@ function doPost(e) {
     props.setProperty("NASTA_ORDER", String(nr + 1));
     id = ("000" + nr).slice(-4);
     var sh = SpreadsheetApp.getActive().getSheetByName(FLIK);
-    sh.appendRow([new Date(), id, lag, barn, "'" + mobil, antal, belopp, ""]);
+    if (!sh || sh.getRange(1, 1).getValue() !== RUBRIKER[0]) { setup(); sh = SpreadsheetApp.getActive().getSheetByName(FLIK); }
+    sh.appendRow([new Date(), "'" + id, lag, barn, "'" + mobil, antal, belopp, ""]);
     SpreadsheetApp.flush();
   } finally {
     lock.releaseLock();

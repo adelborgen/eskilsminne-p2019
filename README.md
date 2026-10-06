@@ -35,9 +35,9 @@ Dela aldrig token i chatten eller i koden. Läcker den: `/revoke` hos BotFather.
 
 ## 3. Publicera som webbapp
 
-1. **Distribuera → Ny distribution → Webbapp**. *Kör som:* **Jag**. *Åtkomst:* **Alla**.
+1. **Implementera → Ny implementering → Webbapp**. *Kör som:* **Jag**. *Vem har åtkomst:* **Alla** (inte "Alla med Google-konto": då stoppas beställningarna och sidan säger "Det gick inte att skicka just nu"). Testa adressen + `?action=status&lag=P2019` i ett inkognitofönster. Svaret ska vara `{"ok":true,"bestallt":0}`, inte en inloggningssida.
 2. Kopiera webbappens URL (slutar på `/exec`).
-3. **Efter varje ändring i Code.gs:** Distribuera → Hantera distributioner → redigera → Ny version.
+3. **Efter varje ändring i Code.gs:** Implementera → Hantera implementeringar → pennan → Version: Ny version → Implementera.
 
 Åtkomst "Alla" betyder att vem som helst med adressen kan skicka data. Därför räknar servern själv ut beloppet, kontrollerar allt (lag, antal, mobilnummer) och har honeypot, tidsspärr och spärr per mobilnummer.
 
