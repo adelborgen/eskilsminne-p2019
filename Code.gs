@@ -50,7 +50,13 @@ function setup() {
     ["Beräknad faktura Marabou (kr)", "=B7*" + CFG.INKOPSPRIS],
     ["Betalt minus faktura (kr)", "=B3-B8"]
   ];
-  ov.getRange(1, 1, rader.length, 2).setValues(rader);
+  // Formler via setFormula: engelsk syntax med komma fungerar oavsett arkets språk
+  // (setValues tolkar formler enligt arkets språk, och svenska ark vill ha semikolon).
+  rader.forEach(function (r, i) {
+    ov.getRange(i + 1, 1).setValue(r[0]);
+    if (typeof r[1] === "string" && r[1].charAt(0) === "=") ov.getRange(i + 1, 2).setFormula(r[1]);
+    else ov.getRange(i + 1, 2).setValue(r[1]);
+  });
   ov.getRange(1, 1, rader.length, 1).setFontWeight("bold");
   ov.autoResizeColumn(1);
 }
