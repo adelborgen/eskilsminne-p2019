@@ -11,9 +11,11 @@ Tre delar, alla gratis:
 
 - **index.html**: sidan föräldrarna ser.
 - **Code.gs**: Google Apps Script som tar emot beställningen, räknar ut beloppet, sparar den i ett kalkylark och skickar ett meddelande till Telegram.
-- **Hosting**: Netlify Drop, Cloudflare Pages eller GitHub Pages.
+- **Hosting**: GitHub Pages direkt från det här repot (se steg 4), eller Netlify Drop / Cloudflare Pages.
 
-Tid: ca 30 minuter första gången. Den tidigare versionen med flikar (Hem, Lagkassa, Frågor, produktmeny) ligger kvar i mappen `arkiv-v3-flera-flikar`.
+Tid: ca 30 minuter första gången.
+
+**Repot är publikt.** Allt som checkas in här kan läsas av alla, även historiken. Lägg aldrig in Telegram-token, kalkylarkets adress eller beställningsdata här. Token och chat-id ligger bara i Apps Scripts Skriptegenskaper. Swish-numret i `index.html` syns här och på sidan.
 
 ## 1. Kalkylark + Apps Script
 
@@ -53,13 +55,17 @@ Dela aldrig token i chatten eller i koden. Läcker den: `/revoke` hos BotFather.
 | `belonning` | Texten om vad som händer vid 300 (`{mal}` fylls i automatiskt) |
 | `faq` | Frågorna och svaren. `{pris}`, `{mal}` och `{minimum}` fylls i automatiskt |
 
-Samma värden finns i `CFG` överst i Code.gs (`PRIS`, `INKOPSPRIS`, `MINIMUM`). Ändrar ni i det ena, ändra i det andra. Sedan lägger ni mappen på Netlify Drop (app.netlify.com/drop) eller liknande. Gör en testbeställning och radera testraden i arket.
+Samma värden finns i `CFG` överst i Code.gs (`PRIS`, `INKOPSPRIS`, `MINIMUM`, `MAX_ANTAL`, `ALLOWED_LAG`). Ändrar ni i det ena, ändra i det andra.
+
+**Publicera med GitHub Pages:** i repot, **Settings → Pages → Build and deployment**, välj *Deploy from a branch*, gren `main`, mapp `/ (root)`, och spara. Efter någon minut ligger sidan på `https://adelborgen.github.io/eskilsminne-p2019/`. Varje ändring som hamnar på `main` publiceras automatiskt. (Alternativ: dra mappen till Netlify Drop, app.netlify.com/drop.)
+
+Gör en testbeställning och radera testraden i arket.
 
 ## Hantera betalningar
 
-- Varje beställning blir en rad i *Beställningar* med Order-ID, antal och belopp.
+- Varje beställning blir en rad i *Beställningar* med Order-ID (löpnummer 0001, 0002 …), antal och belopp.
 - Swish-meddelandet blir `Eskils 2019 försäljning <Order-ID>`. Kassören matchar på Order-ID och sätter kolumnen **Betald** till `JA`.
-- Sätt `AVBRUTEN` för en beställning som ska bort. Den räknas då inte i mätaren.
+- Sätt `AVBRUTEN` i samma kolumn för en beställning som ska bort. Den räknas då inte i mätaren.
 - Mätaren visar **beställda** kakor, inte bara betalda, så den rör sig direkt.
 - Fliken *Översikt* räknar beställt, betalt, kartonger att beställa (à 24), beräknad faktura till Marabou och betalt minus faktura.
 
@@ -81,4 +87,9 @@ Samma värden finns i `CFG` överst i Code.gs (`PRIS`, `INKOPSPRIS`, `MINIMUM`).
 
 ## Nästa årskull
 
-Kopiera mappen, byt `lag`, `swish` och `ALLOWED_LAG`, och skapa ett eget kalkylark och en egen Telegram-grupp.
+Kopiera mappen (eller gör ett nytt repo från det här), byt `lag`, `swish` och `ALLOWED_LAG`, och skapa ett eget kalkylark och en egen Telegram-grupp.
+
+## Arbeta i GitHub
+
+- `main` är det som ligger ute (om GitHub Pages används). Ändra gärna i en egen gren och slå ihop via en pull request, så att en annan förälder eller tränare kan titta först.
+- Ändringar i `Code.gs` här uppdaterar **inte** Apps Script. Klistra in filen i Apps Script och gör en ny version av distributionen (steg 3).
