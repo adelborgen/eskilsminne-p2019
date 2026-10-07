@@ -143,11 +143,16 @@
 <main class="page">
   <div class="tabs" role="tablist" aria-label="Sidor">
     <button role="tab" id="tab-bestall" aria-controls="view-bestall" aria-selected="true">Beställ</button>
+    <button role="tab" id="tab-oversikt" aria-controls="view-oversikt" aria-selected="false">Översikt</button>
     <button role="tab" id="tab-fragor" aria-controls="view-fragor" aria-selected="false">Vanliga frågor</button>
   </div>
   <section id="view-bestall" role="tabpanel" aria-labelledby="tab-bestall">
-    <section id="meters" aria-label="Läget just nu"></section>
     <section id="content"></section>
+  </section>
+  <section id="view-oversikt" role="tabpanel" aria-labelledby="tab-oversikt" hidden>
+    <h2 class="title">Översikt</h2>
+    <p class="lead">Så här många kakor har hela laget beställt hittills.</p>
+    <section id="meters" aria-label="Översikt just nu" style="margin-top:16px"><p class="loading">Hämtar översikten…</p></section>
   </section>
   <section id="view-fragor" role="tabpanel" aria-labelledby="tab-fragor" hidden></section>
   <div class="foot" id="foot"></div>
@@ -291,7 +296,7 @@ const CONFIG = {
   function renderMeters() {
     metersBox.textContent = "";
     var n = state.bestallt;
-    if (n == null) return;
+    if (n == null) { metersBox.appendChild(h("p", { class: "loading", text: state.statusFel ? "Det gick inte att hämta översikten just nu. Försök igen om en stund." : "Hämtar översikten…" })); return; }
     var mal = CONFIG.mal, cap1, reward = fill(CONFIG.belonning);
     if (n < mal) cap1 = [{ b: nf.format(mal - n) + " kvar till " + nf.format(mal) + ". " }, reward];
     else cap1 = [{ b: "Målet nått! " }, "Det blir en överraskning för barnen på sista träningen före jul." + (n > mal ? " Allt över " + nf.format(mal) + " är bonus: +" + nf.format(n - mal) + " kakor." : "")];
@@ -309,8 +314,12 @@ const CONFIG = {
     if (demo) { state.bestallt = CONFIG.demoBestallt; renderMeters(); return; }
     fetch(CONFIG.endpoint + "?action=status&lag=" + encodeURIComponent(CONFIG.lag))
       .then(function (r) { return r.json(); })
-      .then(function (d) { if (d && d.ok && typeof d.bestallt === "number") { state.bestallt = d.bestallt; renderMeters(); } })
-      .catch(function () { /* mätarna döljs, formuläret fungerar ändå */ });
+      .then(function (d) {
+        if (d && d.ok && typeof d.bestallt === "number") { state.bestallt = d.bestallt; state.statusFel = false; }
+        else if (state.bestallt == null) state.statusFel = true;
+        renderMeters();
+      })
+      .catch(function () { if (state.bestallt == null) { state.statusFel = true; renderMeters(); } });
   }
 
   /* ---------- Formulär ---------- */
@@ -477,17 +486,20 @@ const CONFIG = {
   }
 
   /* ---------- Flikar och vanliga frågor ---------- */
-  var tabB = document.getElementById("tab-bestall"), tabF = document.getElementById("tab-fragor");
-  var viewB = document.getElementById("view-bestall"), viewF = document.getElementById("view-fragor");
+  // Översikten hämtas direkt när sidan laddas (i bakgrunden) och på nytt varje gång fliken öppnas.
+  var TABS = ["bestall", "oversikt", "fragor"];
+  var viewF = document.getElementById("view-fragor");
   function showTab(which) {
-    var order = which !== "fragor";
-    tabB.setAttribute("aria-selected", String(order)); tabF.setAttribute("aria-selected", String(!order));
-    viewB.hidden = !order; viewF.hidden = order;
-    try { history.replaceState(null, "", location.search + (order ? "" : "#fragor")); } catch (e) {}
+    if (TABS.indexOf(which) < 0) which = "bestall";
+    TABS.forEach(function (t) {
+      document.getElementById("tab-" + t).setAttribute("aria-selected", String(t === which));
+      document.getElementById("view-" + t).hidden = t !== which;
+    });
+    try { history.replaceState(null, "", location.search + (which === "bestall" ? "" : "#" + which)); } catch (e) {}
+    if (which === "oversikt" && !demo) loadStatus();
     window.scrollTo(0, 0);
   }
-  tabB.addEventListener("click", function () { showTab("bestall"); });
-  tabF.addEventListener("click", function () { showTab("fragor"); });
+  TABS.forEach(function (t) { document.getElementById("tab-" + t).addEventListener("click", function () { showTab(t); }); });
 
   function renderFaq() {
     viewF.textContent = "";
@@ -501,7 +513,7 @@ const CONFIG = {
   renderFaq();
   renderForm();
   loadStatus();
-  if (location.hash === "#fragor") showTab("fragor");
+  if (location.hash) showTab(location.hash.slice(1));
 })();
 </script>
 </body>

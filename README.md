@@ -1,6 +1,6 @@
 # Eskilsminne försäljning (P2019): ett formulär, två mätare, Swish
 
-En enkel sida med två flikar: **Beställ** och **Vanliga frågor**. Föräldern väljer antal kakor, beställer och får en bekräftelse med Swish-instruktioner. Överst på Beställ visas två mätare för hela laget:
+En enkel sida med tre flikar: **Beställ** (öppnas först), **Översikt** och **Vanliga frågor**. Föräldern väljer antal kakor, beställer och får en bekräftelse med Swish-instruktioner. Under Översikt visas två mätare för hela laget (de hämtas i bakgrunden när sidan laddas):
 
 1. **Beställt**: antal kakor mot målet 300. Beställs 300 eller fler blir det en överraskning för barnen på sista träningen före jul, och det står i mätaren.
 2. **Direkt till lagkassan**: 30 kr − 14,50 kr = 15,50 kr per kaka, summerat.
