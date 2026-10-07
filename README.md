@@ -75,8 +75,8 @@ Gör en testbeställning och radera testraden i arket.
 0. **Belöningen vid 300.** Beslutat: beställs 300 eller fler blir det en mindre överraskning för barnen på sista träningen före jul. Vid 300 kakor kommer 4 650 kr in direkt till lagkassan. Texten finns i `belonning`, i FAQ-frågan "Vad händer om vi når 300 kakor?" och i mätaren.
 
 1. **Swish-nummer.** Andreas Adelborg tar emot betalningarna på sitt privata nummer 073 028 18 22. Mottagarens namn visas i bekräftelsen så att föräldrarna känner igen det i Swish. Byt till klubbens eget nummer om ett sådant kommer (`swish.nummer` och `swish.namnPaKonto` i `CONFIG`).
-2. **Återbetalning.** Eftersom föräldrarna betalar före beställningen till Marabou står det på sidan att Swish betalas tillbaka om 240 inte nås. Bekräfta att det är vad ni vill, och vem som sköter återbetalningarna.
-3. **Inköpspriset 14,50 kr.** Det kommer från Marabous beställningssida. Kontrollera mot den faktiska offerten, eftersom mätaren för lagkassan räknar på det.
+2. **Återbetalning.** Beslutat: nås inte 240 betalar Andreas Adelborg tillbaka varje Swish. Det står på sidan och i Vanliga frågor.
+3. **Inköpspriset 14,50 kr.** Bekräftat: 14,50 kr per kaka inklusive moms och frakt. Mätaren för lagkassan räknar på det (15,50 kr per kaka till laget).
 4. **Kartonger.** Marabou levererar i kartonger om 24. Minimum 240 är 10 kartonger. 300 kakor blir 12,5, alltså 13 kartonger (312 kakor).
 5. **Personuppgifter.** Sidan samlar barnets förnamn och ett mobilnummer. Klubben är personuppgiftsansvarig, så stäm av med dem vem som får se arket.
 6. **Ingen "Öppna Swish"-knapp.** Vi testade sex länkformat på iPhone (`https://app.swish.nu/1/p/sw/…` som i Swish QR-koder, `intent://` och tre varianter av `swish://payment?data=…`). Alla gav "Felaktig länk" eller öppnade inte appen, så knappen är borttagen. Föräldrarna kopierar nummer, belopp och meddelande med kopiera-knapparna. Testsidan ligger kvar i `swish-test.html` om någon vill prova igen.
