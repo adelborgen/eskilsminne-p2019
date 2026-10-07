@@ -92,7 +92,7 @@ Kopiera mappen (eller gör ett nytt repo från det här), byt `lag`, `swish` och
 
 ## Flera lag
 
-En prototyp för en klubbsida med laglista (ett Swish-nummer per lag, varje lag med eget kalkylark) ligger i mappen `klubb/`. Se `klubb/README.md`. Sidan som ligger ute, `index.html` i roten, påverkas inte.
+En prototyp för en klubbsida med laglista, adminvy för lagens kassörer och ett Swish-nummer per lag ligger i mappen `klubb/`. Pengarna går direkt till lagets eget nummer och systemet rör aldrig pengar. Se `klubb/README.md`. Sidan som ligger ute, `index.html` och `Code.gs` i roten, påverkas inte.
 
 ## Arbeta i GitHub
 

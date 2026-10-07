@@ -1,55 +1,114 @@
-# Klubbsidan: flera lag, ett Swish-nummer per lag (prototyp)
+# Klubbsidan: flera lag, adminvy och ett Swish-nummer per lag (prototyp)
 
-En klubbsida där föräldern först väljer lag i en lista och sedan beställer, precis som på den publicerade P2019-sidan. **Mappen är en prototyp. Rotens `index.html` (P2019-sidan som ligger ute) är inte ändrad.**
+En klubbsida där föräldern väljer lag i en lista och beställer, precis som på den publicerade P2019-sidan. Varje lags kassör har en adminvy där de ser beställningar och markerar betalningar. Klubbens administratör lägger till lag.
+
+**Mappen är en prototyp. Rotens `index.html` och `Code.gs` (P2019-sidan som ligger ute) är inte ändrade och fortsätter fungera separat.**
 
 ## Principen
 
-- **Pengarna går direkt till lagets eget Swish-nummer.** Sidan tar aldrig emot en betalning.
-- **Sidan sparar ingen beställningsdata.** Varje lag har sitt eget kalkylark, sitt eget Apps Script och sin egen Telegram-grupp, enligt steg 1–3 i `../README.md`. Föräldrarnas namn och mobilnummer ligger därför hos lagets kassör.
-- **Det enda som är gemensamt är listan över lag** och beställningssidan som läser lagets inställningar.
+- **Pengarna går direkt till lagets Swish-nummer.** Systemet tar aldrig emot, håller eller flyttar pengar. Det kräver inget särskilt slags nummer: lagets eget, ett privat eller ett Swish Handel-nummer, det bestämmer laget. Numret skrivs in i lagets uppgifter och visas för föräldern efter beställningen.
+- **Ett skript och ett kalkylark för hela klubben** (`Server.gs`). Alla beställningar ligger i klubbens kalkylark. Lagens kassörer använder adminvyn, inte kalkylarket, och ser bara sitt eget lag.
+- **Priset räknas alltid på servern.** Sidan skickar bara antal.
+
+## Tre roller
+
+| Roll | Gör | Loggar in med |
+|---|---|---|
+| Förälder | Väljer lag och beställer, swishar till lagets nummer | Inget |
+| Lagets kassör | Ser översikt och beställningar för sitt lag, markerar betald/avbruten, ringer eller skickar SMS-påminnelse, exporterar CSV | Lagets adminnyckel (via en personlig länk) |
+| Klubbens administratör | Lägger till lag, öppnar/stänger/avslutar försäljning, ändrar uppgifter, byter nycklar, ser alla lag | Superadmin-nyckeln |
 
 ## Filer
 
 | Fil | Innehåll |
 |---|---|
-| `index.html` | Skalet. `?lag=p2019` visar ett lag, utan `?lag` visas listan. |
-| `lag.js` | **Laglistan.** Klubbens standardvärden (`KLUBB.standard`) och ett block per lag (`LAG`). Här läggs lag till. |
-| `app.js` | Listan, routern och beställningssidan (samma som `../index.html`, men styrd av lagets inställningar). Behöver inte ändras när ett lag läggs till. |
-| `style.css` | Utseendet. Samma som `../index.html` plus lagkort. |
-| `nytt-lag.html` | Hjälp för kassören: fyll i uppgifter, få färdiga rader till `lag.js` och till lagets `Code.gs`. Inget skickas. |
+| `index.html`, `app.js` | Laglistan och beställningssidan. `?lag=p2019` visar ett lag. |
+| `admin.html`, `admin.js` | Adminvyn för kassörer och klubbens administratör. |
+| `Server.gs` | Servern: klistras in i Google Apps Script. Sköter lag, beställningar, nycklar och adminåtgärder. |
+| `lag.js` | Klubbens gemensamma inställningar (namn, texter, adressen till servern) och texter som skiljer för ett visst lag. **Inte lagens siffror**, de läggs till i adminvyn. |
+| `util.js`, `style.css` | Delade hjälpfunktioner och utseende. |
+| `test/` | Tester för servern. Se längst ned. |
 
-## Lägg till ett lag
+## Prova utan att sätta upp något (demoläge)
 
-1. Öppna `nytt-lag.html`, fyll i lagets namn, Swish-nummer, pris med mera. Du får två textbitar.
-2. Lagets kassör gör steg 1–3 i `../README.md` (kalkylark, Telegram, webbapp) och klistrar in raderna för `Code.gs` (`PRIS`, `INKOPSPRIS`, `MINIMUM`, `ALLOWED_LAG`). Kassören skickar webbapp-adressen (slutar på `/exec`).
-3. Lägg blocket i listan `LAG` i `lag.js` och fyll i `endpoint`. Gör det gärna via en pull request så att någon kan titta först.
+Så länge `endpoint` i `lag.js` är tom visar sidorna exempellag och exempeldata, och inget sparas eller skickas. Öppna `klubb/index.html` och `klubb/admin.html` i webbläsaren, eller kör `python3 -m http.server` i repots rot och gå till `http://localhost:8000/klubb/`.
 
-Ett lag kan sälja något annat än kakor. Skriv över `produkt`, `pris`, `intro`, `faq` med mera i lagets block (se P2018 i `lag.js`). `status: "snart"` visar laget i listan utan att det går att öppna. Utan `endpoint` körs laget i demoläge och inget skickas.
+I adminvyn i demoläge är nyckeln `demo` för ett lags admin och `super` för klubbens administratör.
 
-## Prova
+## Sätt upp servern (en gång, ca 30 minuter)
 
-Öppna `klubb/index.html` i webbläsaren, eller kör `python3 -m http.server` i repots rot och gå till `http://localhost:8000/klubb/`.
+Görs av klubbens administratör.
 
-P2019 i listan använder **samma endpoint och Swish-nummer som den publicerade sidan**, så en beställning via `klubb/?lag=p2019` hamnar i det riktiga arket. Radera testraden efteråt. De andra lagen (F2017, P2018, F2016) är exempel utan endpoint, märkta "Exempel" i listan, och skickar ingenting.
+1. **Konto och kalkylark.** Skapa kalkylarket "Lagförsäljning" på ett Google-konto som **klubben äger** och som fler än en person kommer åt (se "Personuppgifter" nedan). Dela det inte med lagens kassörer.
+2. **Apps Script.** I kalkylarket: **Tillägg → Apps Script**. Ta bort befintlig kod, klistra in hela `Server.gs` och spara.
+3. **Kör `setup`.** Välj funktionen `setup` och tryck **Kör**. Godkänn behörigheterna. Flikarna *Lag*, *Beställningar* och *Logg* skapas. Öppna **Körningar** (eller *Exekveringslogg*): där står **superadmin-nyckeln**. Den visas bara nu. Spara den i en lösenordshanterare. Tappas den: kör `nySuperNyckel` (den gamla slutar fungera).
+4. **Publicera som webbapp.** **Implementera → Ny implementering → Webbapp**. *Kör som:* **Jag**. *Vem har åtkomst:* **Alla** (inte "Alla med Google-konto", då stoppas beställningarna). Kopiera webbappens URL (slutar på `/exec`).
+5. **Koppla sidan.** Klistra in URL:en som `endpoint` i `lag.js`.
+6. **Lägg till lag.** Öppna `admin.html`, välj *Klubbadministratör*, logga in med superadmin-nyckeln och öppna **Lägg till lag**. Du får en adminlänk per lag att skicka till lagets kassör.
+7. **Efter varje ändring i `Server.gs`:** Implementera → Hantera implementeringar → pennan → Version: Ny version → Implementera.
+
+## Så läggs ett lag till
+
+1. Kassören hör av sig med lagets uppgifter: Swish-nummer, mottagarens namn, pris, inköpspris, minimum och mål.
+2. Klubbens administratör kontrollerar (kryssrutorna i formuläret påminner om det): att klubben eller lagets ansvariga har bekräftat laget, att numrets ägare vet om att numret används, och att kassören vet att länken är personlig.
+3. Administratören fyller i formuläret. Laget får en nyckel och en adminlänk som visas **en enda gång**. Skicka länken på ett säkert sätt, inte i en öppen grupp.
+4. Sätt status till *Pågår*, gör en testbeställning på lagets sida och markera den som avbruten.
+
+Förlorad nyckel: *Ny nyckel* under Alla lag. Den gamla slutar fungera direkt.
+
+## Säkerhet
+
+- **Nycklar.** 32 slumpade tecken (122 bit). I kalkylarket och i servern lagras bara en hash av nyckeln, aldrig själva nyckeln. Adminlänken har formen `admin.html#lag=<lag>&k=<nyckel>`: nyckeln ligger efter `#`, så den skickas inte till webbservern, och tas bort ur adressfältet vid inloggning. Inloggningen sparas bara i webbläsarflikens `sessionStorage` och försvinner när fliken stängs.
+- **Behörighet kontrolleras alltid av servern**, aldrig av sidan. Ett lags nyckel ger bara det laget. Bara superadmin-nyckeln kan lägga till lag, ändra uppgifter och byta nycklar.
+- **Spärr.** Efter 10 felaktiga nyckelförsök för ett lag (eller 40 totalt) spärras inloggningen en stund.
+- **Logg.** Fliken *Logg* i kalkylarket visar när ett lag skapades, ändrades eller fick ny nyckel och varje betalningsmarkering.
+- **Skydd mot skräp.** Beställningar har honeypot, tidsspärr, spärr per mobilnummer och kontroll av lag, status och högsta antal. Text som admin skriver rensas från inledande `=`, `+`, `-`, `@` så att inget tolkas som formel i kalkylarket.
+- Servern är en publik webbadress: den som känner URL:en kan anropa den. Därför ligger all behörighet i nycklarna ovan.
+
+## Personuppgifter
+
+Beställningarna innehåller barnets förnamn och förälderns mobilnummer.
+
+- **Klubben är personuppgiftsansvarig** för alla sina lag. Den som sätter upp och sköter servern behandlar uppgifterna **på klubbens uppdrag** (personuppgiftsbiträde). Skriv ner uppdraget kort: vem som får se uppgifterna, till vad, och att de raderas efter säsongen. Stäm av med klubbens styrelse hur det ska se ut. Det här är inte juridisk rådgivning.
+- Klubbens administratör (och den som äger kalkylarket) ser **alla** lags uppgifter. Lagens kassörer ser bara sitt eget lag, via adminvyn.
+- Kalkylarket ska ligga på ett konto som klubben äger och som minst två personer kommer åt, så att det inte hänger på en enskild privatperson.
+- Radera beställningsraderna när säsongen är över.
+
+## Bra att veta
+
+- **Pengarna.** Den som äger lagets Swish-nummer tar emot pengarna och betalar tillbaka vid behov, till exempel om minimum inte nås. Skriv ner vem det är för varje lag.
+- **Notiser.** Det finns ingen Telegram eller e-post i den här versionen: kassören tittar i adminvyn. Beställningar är *Obetalda* tills kassören trycker *Betald*.
+- **Betalningar matchas för hand.** Föräldern skriver ordernumret i Swish-meddelandet, kassören matchar det mot Swish-historiken och trycker *Betald*. Automatisk matchning kräver Swish Handel med API eller en betalleverantör och finns inte här.
+- **Inloggning med nyckel** är enkel och passar volontärer, men en vidarebefordrad länk ger åtkomst. Byt nyckel om den kan ha hamnat fel.
+- **Skalning.** Apps Script och ett kalkylark räcker för en klubb med några lag och några hundra beställningar. Blir det betydligt mer (många lag, tusentals beställningar) bör servern bytas mot en riktig databas. Sidorna pratar med servern via ett litet JSON-API, så servern kan bytas ut senare.
+
+## Flytta P2019 hit
+
+P2019-sidan i roten och dess skript (`Code.gs`) fortsätter som idag tills försäljningen är klar. Därefter:
+
+1. Lägg till P2019 i adminvyn med samma uppgifter. Belöningstexterna för P2019 finns redan i `LAG_EXTRA.p2019` i `lag.js`.
+2. Exportera de gamla beställningarna om de ska sparas (Order-ID och belopp följer inte med automatiskt).
+3. Ersätt rotens `index.html` med en omdirigering till `klubb/?lag=p2019`, så att gamla länkar fortsätter fungera.
 
 ## Publicera
 
-- **Som mapp i det här repot:** när grenen slås ihop med `main` ligger sidan på `https://adelborgen.github.io/eskilsminne-p2019/klubb/`. P2019-sidan i roten ligger kvar oförändrad.
+- **Som mapp i det här repot:** när grenen slås ihop med `main` ligger sidan på `https://adelborgen.github.io/eskilsminne-p2019/klubb/` och adminvyn på `…/klubb/admin.html`.
 - **Med egen domän:** lägg mappens innehåll i roten av ett nytt repo (gärna under en GitHub-organisation), slå på Pages och ange domänen under *Settings → Pages → Custom domain* med en CNAME-post hos registratorn.
-- När försäljningen för P2019 är klar kan rotens `index.html` ersättas med en omdirigering till `klubb/?lag=p2019`, så att de gamla länkarna fortsätter fungera.
-
-## Vad som är prototyp
-
-- Ingen inloggning och ingen adminvy. Hanteringen sker i lagets eget kalkylark och Telegram-grupp.
-- Betalningar matchas fortfarande för hand (Order-ID i Swish-meddelandet). Automatisk matchning kräver Swish Handel med API eller en betalleverantör.
-- `lag.js` och alla endpoints är publika, eftersom repot är publikt.
-- Beställningskoden finns i två exemplar (`../index.html` och `app.js`) tills P2019 har flyttats hit.
 
 ## Att bestämma innan ni går live
 
 1. **Namn.** "Lagförsäljning" är en platshållare. Välj ett namn som inte krockar med någon annan tjänst (kolla domän och varumärke).
-2. **Klubbens godkännande** för namn, logga och färger. Färgerna är de som redan används på P2019-sidan (se `../README.md`).
-3. **Eget Swish-nummer per lag**, helst Swish Handel via föreningens bank, inte ett privat nummer.
-4. **Vem betalar tillbaka** om minimum inte nås. Idag gör Andreas Adelborg det personligen för P2019.
-5. **Personuppgifter.** Klubben är personuppgiftsansvarig. Stäm av med klubben vem som får se varje lags kalkylark.
-6. **Ta bort exempellagen** (`demo: true`) ur `lag.js`.
+2. **Klubbens godkännande** för namn, logga och färger (färgerna är de som redan används på P2019-sidan, se `../README.md`), och för att administratören sköter servern.
+3. **En andra administratör** som kommer åt kalkylarket, Apps Script-projektet, GitHub och domänen.
+4. **Uppdraget kring personuppgifter** (se ovan).
+5. **Vem betalar tillbaka** om minimum inte nås, för varje lag.
+
+## Tester
+
+Servern körs i Node mot låtsas-versioner av Googles tjänster, utan att något riktigt kalkylark rörs:
+
+```
+node --test klubb/test/server.test.cjs
+```
+
+Testerna täcker bland annat att ett lag inte kan se eller ändra ett annat lags beställningar, att priset räknas på servern, att nycklar och hashar aldrig syns i något svar, att bara klubbens administratör kan lägga till lag, spärren efter felaktiga försök, och att varje kontroll av indata avvisar fel värden. Sidorna är dessutom provkörda i en webbläsare mot den riktiga `Server.gs`.

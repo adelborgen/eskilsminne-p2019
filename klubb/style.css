@@ -68,7 +68,7 @@
   /* ---------- Formulär ---------- */
   label, .label { display: block; font-weight: 700; margin: 0 0 6px; font-size: 15px; }
   .hint { font-weight: 400; color: var(--muted); font-size: 13px; display: block; margin-top: 2px; }
-  input[type=text], input[type=tel], input[type=number] { width: 100%; font: inherit; color: var(--text); background: var(--bg);
+  input[type=text], input[type=tel], input[type=number], input[type=password] { width: 100%; font: inherit; color: var(--text); background: var(--bg);
     border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-height: 50px; }
   input:focus, button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--sel-border); outline-offset: 2px; }
   .field + .field { margin-top: 16px; }
@@ -146,3 +146,43 @@
   .warn { color: var(--err); font-size: 14px; margin: 6px 0 0; }
   .steps li { margin-top: 8px; }
   .tabs ~ section { margin-top: 16px; }   /* samma avstånd under flikarna som på ../index.html */
+
+  /* ---------- Adminvy (admin.html) ---------- */
+  .topactions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .linkbtn { background: none; border: 0; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; padding: 8px 0; min-height: 44px; }
+  .linkbtn:hover { text-decoration: underline; }
+  input[type=search], select { width: 100%; font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-height: 50px; }
+  .stats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+  .stat.alert { border-color: var(--yellow); border-width: 2px; }
+  .stat .l { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .stat .n { font-size: 28px; font-weight: 800; line-height: 1.15; }
+  .stat .s { font-size: 13px; color: var(--muted); }
+  .kv { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .kv.first { border-top: 0; padding-top: 0; }
+  .kv .k { color: var(--muted); }
+  .kv .v { font-weight: 700; text-align: right; word-break: break-word; }
+  .pos { color: var(--ok); }
+  .neg { color: var(--err); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 2px solid var(--line); background: transparent; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+  .chip[aria-pressed="true"] { border-color: var(--sel-border); background: var(--soft); }
+  .ordercard { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+  .ordercard + .ordercard { margin-top: 10px; }
+  .o-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .o-name { font-weight: 800; }
+  .o-sum { font-weight: 700; white-space: nowrap; }
+  .o-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .badge.unpaid { background: var(--yellow); color: var(--navy); }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .mini { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 2px solid var(--line); background: transparent; color: var(--text);
+    font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+  .mini.go { background: var(--cta-bg); color: var(--cta-ink); border-color: transparent; }
+  .mini[disabled] { opacity: .6; cursor: wait; }
+  .keybox { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--bg); border: 1px dashed var(--muted); border-radius: 12px; padding: 10px 12px; margin-top: 6px; }
+  .keybox code { font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+  .checklist { list-style: none; padding: 0; margin: 12px 0 0; }
+  .checklist li + li { margin-top: 10px; }
+  .teamadmin + .teamadmin { margin-top: 12px; }
+  .ordercard .error:empty { display: none; }

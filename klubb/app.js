@@ -1,50 +1,19 @@
 /* ==========================================================================
    Klubbsidan: laglista + beställningssida per lag.
-   Inget här ska behöva ändras när ett lag läggs till: det görs i lag.js.
+   Lagen och deras uppgifter hämtas från klubbens server (Server.gs), eller från
+   exempeldata i demoläge. Inget här behöver ändras när ett lag läggs till.
    Beställningssidan är samma som ../index.html, men allt kommer från lagets inställningar.
    ========================================================================== */
 (function () {
   "use strict";
 
-  var K = window.KLUBB, LAG = window.LAG || [];
-  var nf = new Intl.NumberFormat("sv-SE");
+  var U = window.U, h = U.h, kr = U.kr, nf = U.nf, merge = U.merge, hamtaLag = U.hamtaLag;
+  var K = window.KLUBB;
 
-  function kr(n) {
-    var whole = Math.abs(n - Math.round(n)) < 0.005;
-    return new Intl.NumberFormat("sv-SE", { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(n) + " kr";
-  }
-
-  // Skapar element utan innerHTML. All text sätts med textContent.
-  function h(tag, attrs) {
-    var e = document.createElement(tag);
-    if (attrs) Object.keys(attrs).forEach(function (k) {
-      if (k === "text") e.textContent = attrs[k];
-      else if (k === "class") e.className = attrs[k];
-      else if (k.indexOf("on") === 0) e.addEventListener(k.slice(2), attrs[k]);
-      else e.setAttribute(k, attrs[k]);
-    });
-    for (var i = 2; i < arguments.length; i++) {
-      var kid = arguments[i];
-      if (kid == null) continue;
-      e.appendChild(typeof kid === "string" ? document.createTextNode(kid) : kid);
-    }
-    return e;
-  }
-
-  // Slår ihop standardvärden och lagets egna värden. Objekt slås ihop, listor ersätts.
-  function merge(base, over) {
-    var out = {};
-    Object.keys(base).forEach(function (k) { out[k] = base[k]; });
-    Object.keys(over || {}).forEach(function (k) {
-      var o = over[k], b = out[k];
-      var plain = function (x) { return x && typeof x === "object" && !Array.isArray(x); };
-      out[k] = plain(o) && plain(b) ? merge(b, o) : o;
-    });
-    return out;
-  }
-
+  // Standardvärden, lagets texter (LAG_EXTRA) och lagets egna uppgifter från servern, i den ordningen.
   function bygg(lag) {
-    var c = merge(K.standard, lag);
+    var c = merge(merge(K.standard, (window.LAG_EXTRA || {})[lag.slug] || {}), lag);
+    c.endpoint = K.endpoint;   // tom i demoläge
     if (!c.swish.meddelande) c.swish.meddelande = lag.namn + " försäljning";
     return c;
   }
@@ -65,10 +34,10 @@
 
   /* ---------- Laglistan ---------- */
   function teamCard(l) {
-    var open = l.status !== "snart";
+    var open = l.status === "pagar";
     var badges = h("span", { class: "badges" },
-      h("span", { class: "badge " + (open ? "live" : ""), text: open ? "Pågår" : "Startar snart" }));
-    if (l.demo) badges.appendChild(h("span", { class: "badge demo", text: "Exempel" }));
+      h("span", { class: "badge " + (open ? "live" : ""), text: open ? "Pågår" : l.status === "avslutad" ? "Avslutad" : "Startar snart" }));
+    if (!K.endpoint) badges.appendChild(h("span", { class: "badge demo", text: "Exempel" }));
     var body = h("span", { class: "t-body" }, h("span", { class: "t-title", text: l.kampanj || K.titel }), badges);
     var card = open
       ? h("a", { class: "teamcard", href: "?lag=" + encodeURIComponent(l.slug) })
@@ -78,7 +47,7 @@
     return h("li", { style: "list-style:none" }, card);
   }
 
-  function renderList() {
+  function renderList(LAG) {
     setTopbar("", K.titel);
     document.title = K.namn + " – " + K.titel;
     var list = h("ul", { class: "teams", style: "padding:0;margin:16px 0 0" });
@@ -179,7 +148,7 @@
 
     function loadStatus() {
       if (demo) { state.bestallt = cfg.demoBestallt; renderMeters(); return; }
-      fetch(cfg.endpoint + "?action=status&lag=" + encodeURIComponent(cfg.namn))
+      fetch(cfg.endpoint + "?action=status&lag=" + encodeURIComponent(cfg.slug))
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d && d.ok && typeof d.bestallt === "number") { state.bestallt = d.bestallt; state.statusFel = false; }
@@ -279,7 +248,7 @@
         if (!samtycke.checked) { setErr("err-samtycke", "Du behöver godkänna för att kunna beställa."); ok = false; }
         if (!ok) { var f = form.querySelector(".error:not(:empty)"); if (f) f.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
 
-        var payload = { lag: cfg.namn, barn: namn, mobil: tel, antal: state.antal, samtycke: true, website: hp.value, t: Date.now() - loadedAt };
+        var payload = { lag: cfg.slug, barn: namn, mobil: tel, antal: state.antal, samtycke: true, website: hp.value, t: Date.now() - loadedAt };
         submit.disabled = true; submit.textContent = "Skickar…";
         function fail(msg) {
           submit.disabled = false; submit.textContent = "Beställ och gå vidare till Swish";
@@ -382,11 +351,41 @@
     if (location.hash) showTab(location.hash.slice(1));
   }
 
-  /* ---------- Router: ?lag=<slug> visar ett lag, annars listan ---------- */
-  var slug = (new URLSearchParams(location.search).get("lag") || "").toLowerCase();
-  if (!slug) renderList();
-  else {
-    var hit = LAG.filter(function (l) { return l.slug === slug; })[0];
-    if (hit) renderTeam(bygg(hit)); else renderIngetLag();
+  function renderInteOppen(cfg) {
+    setTopbar(cfg.namn, cfg.kampanj || K.titel);
+    document.title = (cfg.kampanj || K.titel) + " – " + cfg.namn;
+    app.textContent = "";
+    app.appendChild(h("a", { class: "back", href: "./", text: "← Alla lag" }));
+    app.appendChild(h("h2", { class: "title", text: cfg.status === "avslutad" ? "Försäljningen är avslutad" : "Försäljningen har inte startat än" }));
+    app.appendChild(h("p", { class: "lead", text: cfg.status === "avslutad"
+      ? "Tack till alla som har beställt! Det går inte att beställa längre för " + cfg.namn + "."
+      : "Försäljningen för " + cfg.namn + " öppnar snart. Vi meddelar i lagets WhatsApp-grupp." }));
+    app.appendChild(h("p", { class: "small", text: K.kontakt }));
   }
+
+  function renderFel() {
+    setTopbar("", K.titel);
+    app.textContent = "";
+    app.appendChild(h("h2", { class: "title", text: "Det gick inte att hämta lagen" }));
+    app.appendChild(h("p", { class: "lead", text: "Kontrollera uppkopplingen och försök igen om en stund." }));
+    app.appendChild(h("button", { type: "button", class: "primary", style: "margin-top:16px", text: "Försök igen", onclick: start }));
+  }
+
+  /* ---------- Router: ?lag=<slug> visar ett lag, annars listan ---------- */
+  function start() {
+    var slug = (new URLSearchParams(location.search).get("lag") || "").toLowerCase();
+    setTopbar("", K.titel);
+    app.textContent = "";
+    app.appendChild(h("p", { class: "loading", text: "Hämtar lag…" }));
+    hamtaLag(function (err, lista) {
+      if (err) return renderFel();
+      if (!slug) return renderList(lista);
+      var hit = lista.filter(function (l) { return l.slug === slug; })[0];
+      if (!hit) return renderIngetLag();
+      var cfg = bygg(hit);
+      if (cfg.status !== "pagar") return renderInteOppen(cfg);
+      renderTeam(cfg);
+    });
+  }
+  start();
 })();
