@@ -29,8 +29,30 @@
   var foot = document.getElementById("foot");
   foot.appendChild(h("strong", { text: K.namn }));
   if (K.motto) foot.appendChild(h("div", { text: K.motto }));
+  foot.appendChild(h("div", { style: "margin-top:8px" }, h("a", { href: "admin.html", text: "Admin" })));
 
   var app = document.getElementById("app");
+
+  /* ---------- Navigering ----------
+     Länkarna mellan laglistan och ett lag byter vy utan att ladda om sidan. Adressen (?lag=<slug>) uppdateras
+     så att den går att dela, och en vanlig länk (ny flik, Cmd/Ctrl-klick) fungerar som vanligt. */
+  function slugFranUrl() { return (new URLSearchParams(location.search).get("lag") || "").toLowerCase(); }
+  var valt = slugFranUrl();
+  function gaTill(slug) {
+    valt = slug || "";
+    try { history.pushState(null, "", slug ? "?lag=" + encodeURIComponent(slug) : location.pathname); } catch (e) {}
+    visa();
+    window.scrollTo(0, 0);
+  }
+  function navLank(slug, attrs, text) {
+    var a = h("a", Object.assign({ href: slug ? "?lag=" + encodeURIComponent(slug) : "./" }, attrs));
+    if (text) a.textContent = text;
+    a.addEventListener("click", function (ev) {
+      if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      ev.preventDefault(); gaTill(slug);
+    });
+    return a;
+  }
 
   /* ---------- Laglistan ---------- */
   function teamCard(l) {
@@ -40,7 +62,7 @@
     if (!K.endpoint) badges.appendChild(h("span", { class: "badge demo", text: "Exempel" }));
     var body = h("span", { class: "t-body" }, h("span", { class: "t-title", text: l.kampanj || K.titel }), badges);
     var card = open
-      ? h("a", { class: "teamcard", href: "?lag=" + encodeURIComponent(l.slug) })
+      ? navLank(l.slug, { class: "teamcard" })
       : h("div", { class: "teamcard off", "aria-disabled": "true" });
     card.appendChild(h("span", { class: "pill", text: l.namn }));
     card.appendChild(body);
@@ -65,7 +87,7 @@
     app.textContent = "";
     app.appendChild(h("h2", { class: "title", text: "Vi hittar inte laget" }));
     app.appendChild(h("p", { class: "lead", text: "Länken verkar vara fel. Välj ditt lag i listan." }));
-    app.appendChild(h("a", { class: "primary", href: "./", style: "margin-top:16px", text: "Till alla lag" }));
+    app.appendChild(navLank(null, { class: "primary", style: "margin-top:16px" }, "Till alla lag"));
   }
 
   /* ---------- Ett lag: beställning, översikt, vanliga frågor ---------- */
@@ -106,7 +128,7 @@
     });
 
     app.textContent = "";
-    app.appendChild(h("a", { class: "back", href: "./", text: "← Alla lag" }));
+    app.appendChild(navLank(null, { class: "back" }, "← Alla lag"));
     app.appendChild(tabsEl);
     app.appendChild(viewB); app.appendChild(viewO); app.appendChild(viewF);
 
@@ -355,7 +377,7 @@
     setTopbar(cfg.namn, cfg.kampanj || K.titel);
     document.title = (cfg.kampanj || K.titel) + " – " + cfg.namn;
     app.textContent = "";
-    app.appendChild(h("a", { class: "back", href: "./", text: "← Alla lag" }));
+    app.appendChild(navLank(null, { class: "back" }, "← Alla lag"));
     app.appendChild(h("h2", { class: "title", text: cfg.status === "avslutad" ? "Försäljningen är avslutad" : "Försäljningen har inte startat än" }));
     app.appendChild(h("p", { class: "lead", text: cfg.status === "avslutad"
       ? "Tack till alla som har beställt! Det går inte att beställa längre för " + cfg.namn + "."
@@ -368,16 +390,17 @@
     app.textContent = "";
     app.appendChild(h("h2", { class: "title", text: "Det gick inte att hämta lagen" }));
     app.appendChild(h("p", { class: "lead", text: "Kontrollera uppkopplingen och försök igen om en stund." }));
-    app.appendChild(h("button", { type: "button", class: "primary", style: "margin-top:16px", text: "Försök igen", onclick: start }));
+    app.appendChild(h("button", { type: "button", class: "primary", style: "margin-top:16px", text: "Försök igen", onclick: visa }));
   }
 
   /* ---------- Router: ?lag=<slug> visar ett lag, annars listan ---------- */
-  function start() {
-    var slug = (new URLSearchParams(location.search).get("lag") || "").toLowerCase();
+  function visa() {
+    var slug = valt;
     setTopbar("", K.titel);
     app.textContent = "";
     app.appendChild(h("p", { class: "loading", text: "Hämtar lag…" }));
     hamtaLag(function (err, lista) {
+      if (slug !== valt) return;   // användaren hann byta vy
       if (err) return renderFel();
       if (!slug) return renderList(lista);
       var hit = lista.filter(function (l) { return l.slug === slug; })[0];
@@ -387,5 +410,6 @@
       renderTeam(cfg);
     });
   }
-  start();
+  window.addEventListener("popstate", function () { valt = slugFranUrl(); visa(); });
+  visa();
 })();

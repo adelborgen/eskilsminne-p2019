@@ -23,6 +23,7 @@
   }
   if (K.logo) { var lg = document.getElementById("logo"); lg.src = K.logo; lg.alt = K.namn; lg.hidden = false; }
   document.getElementById("foot").appendChild(h("strong", { text: K.namn }));
+  document.getElementById("foot").appendChild(h("div", { style: "margin-top:8px" }, h("a", { href: "./", text: "Till lagsidan" })));
 
   /* ---------- Inloggningen sparas bara i fliken (försvinner när fliken stängs) ---------- */
   function sparaSession() { try { sessionStorage.setItem("admin", JSON.stringify({ lag: S.lag, key: S.key })); } catch (e) {} }
@@ -393,16 +394,22 @@
         });
       });
       andra.appendChild(h("div", { style: "padding-top:12px" }, fb.el, spara, sFel));
+      var bekrafta = h("div", { class: "notice", hidden: "", style: "margin-top:12px" },
+        h("p", { style: "margin:0", text: "Den gamla nyckeln för " + l.namn + " slutar fungera direkt." }),
+        h("div", { class: "btnrow" },
+          h("button", { type: "button", class: "mini go", text: "Ja, byt nyckel", onclick: function () {
+            bekrafta.hidden = true; fel.textContent = "";
+            anropa("nyNyckel", { slug: l.slug }).then(function (r) { if (r.ok) visaNyckel("Ny nyckel för " + l.namn, l.slug, r.key); else fel.textContent = r.fel; });
+          } }),
+          h("button", { type: "button", class: "mini", text: "Avbryt", onclick: function () { bekrafta.hidden = true; } })));
       return h("div", { class: "card teamadmin" },
         h("div", { class: "o-head" }, h("span", { class: "o-name", text: l.namn + " · " + (l.kampanj || "") }), h("span", { class: "badge", text: STATUS_TEXT[l.status] || l.status })),
         h("div", { class: "o-sub num", text: "Beställt " + nf.format(ov.bestallt) + " av " + nf.format(l.mal) + " · Betalt " + nf.format(ov.betalt) + " · Obetalt " + nf.format(ov.obetalt) }),
         h("div", { class: "field", style: "margin-top:12px" }, sel),
         h("div", { class: "btnrow" },
           h("button", { type: "button", class: "mini go", text: "Öppna admin", onclick: function () { S.valt = l.slug; renderAdmin(); } }),
-          h("button", { type: "button", class: "mini", text: "Ny nyckel", onclick: function () {
-            if (!window.confirm("Den gamla nyckeln för " + l.namn + " slutar fungera direkt. Fortsätta?")) return;
-            anropa("nyNyckel", { slug: l.slug }).then(function (r) { if (r.ok) visaNyckel("Ny nyckel för " + l.namn, l.slug, r.key); else fel.textContent = r.fel; });
-          } })),
+          h("button", { type: "button", class: "mini", text: "Ny nyckel", onclick: function () { bekrafta.hidden = false; } })),
+        bekrafta,
         andra);
     }
 
