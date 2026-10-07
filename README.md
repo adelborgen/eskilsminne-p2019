@@ -90,6 +90,10 @@ Gör en testbeställning och radera testraden i arket.
 
 Kopiera mappen (eller gör ett nytt repo från det här), byt `lag`, `swish` och `ALLOWED_LAG`, och skapa ett eget kalkylark och en egen Telegram-grupp.
 
+## Flera lag
+
+En prototyp för en klubbsida med laglista (ett Swish-nummer per lag, varje lag med eget kalkylark) ligger i mappen `klubb/`. Se `klubb/README.md`. Sidan som ligger ute, `index.html` i roten, påverkas inte.
+
 ## Arbeta i GitHub
 
 - `main` är det som ligger ute (om GitHub Pages används). Ändra gärna i en egen gren och slå ihop via en pull request, så att en annan förälder eller tränare kan titta först.
