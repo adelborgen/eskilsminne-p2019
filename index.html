@@ -179,7 +179,8 @@ const CONFIG = {
   pris: 30,            // kr per kaka som föräldern swishar
   inkopspris: 14.5,    // kr per kaka vi betalar Marabou (inkl. tryck, frakt, moms). Kontrollera mot offerten.
   minimum: 240,        // minst så många behövs för att vi ska kunna beställa
-  mal: 300,            // mätarens slut. Allt över är bonus.
+  mal: 300,            // målet med överraskningen. Visas som en markering i mätaren.
+  matarMax: 400,       // mätarens slut
   maxAntal: 50,        // största antal per beställning
   snabbval: [5, 10, 15, 20],
 
@@ -308,14 +309,15 @@ const CONFIG = {
     metersBox.textContent = "";
     var n = state.bestallt;
     if (n == null) { metersBox.appendChild(h("p", { class: "loading", text: state.statusFel ? "Det gick inte att hämta översikten just nu. Försök igen om en stund." : "Hämtar översikten…" })); return; }
-    var mal = CONFIG.mal, cap1, reward = fill(CONFIG.belonning);
+    var mal = CONFIG.mal, matarMax = Math.max(CONFIG.matarMax || mal, mal), cap1, reward = fill(CONFIG.belonning);
     if (n < mal) cap1 = [{ b: nf.format(mal - n) + " kvar till " + nf.format(mal) + ". " }, reward];
     else cap1 = [{ b: "Målet nått! " }, "Det blir en överraskning för barnen på sista träningen före jul." + (n > mal ? " Allt över " + nf.format(mal) + " är bonus: +" + nf.format(n - mal) + " kakor." : "")];
 
     var card = h("div", { class: "card meters" }, h("p", { class: "kicker", text: "Hela laget just nu" }),
-      meter({ label: "Beställt", big: nf.format(n), small: "av " + nf.format(mal) + " kakor", value: n, max: mal,
-        aria: "Beställda kakor", cap: cap1 }),
-      meter({ label: "Direkt till lagkassan", big: kr(n * marginal), small: "hittills", value: n * marginal, max: mal * marginal,
+      meter({ label: "Beställt", big: nf.format(n), small: "kakor (mål " + nf.format(mal) + ")", value: n, max: matarMax,
+        markerAt: mal, markerLabel: "Mål " + nf.format(mal), aria: "Beställda kakor", cap: cap1 }),
+      meter({ label: "Direkt till lagkassan", big: kr(n * marginal), small: "hittills", value: n * marginal, max: matarMax * marginal,
+        markerAt: mal * marginal, markerLabel: kr(mal * marginal),
         aria: "Pengar till lagkassan",
         cap: [{ b: kr(marginal) }, " av varje kaka går direkt till lagkassan. Vid " + nf.format(mal) + " kakor blir det " + kr(mal * marginal) + "."] }));
     metersBox.appendChild(card);
