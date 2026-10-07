@@ -187,20 +187,23 @@ const CONFIG = {
   swish: { nummer: "073 028 18 22", namnPaKonto: "Andreas Adelborg", meddelande: "Eskils 2019 försäljning" },
 
   intro: "Beställ klubbens chokladkaka med logga. Pengarna går till cuper, aktiviteter och annat som förgyller barnens vardag i laget. " +
+         "Du köper kakorna av laget för {pris} styck, vilket också är det rekommenderade priset när du säljer dem vidare. " +
          "Målet är minst 10 kakor per barn.",
   aterbetalning: "Kan vi av något skäl inte genomföra beställningen betalar vi tillbaka din Swish. Läs mer under Vanliga frågor.",
   belonning: "Beställs {mal} kakor eller fler blir det en överraskning för barnen på sista träningen före jul.",
   utlamning: "Information om när och var kakorna delas ut kommer inom kort.",
   kontakt: "Hittar du inte svaret? Skriv i lagets WhatsApp-grupp.",
 
-  // Vanliga frågor. {pris}, {mal} och {minimum} fylls i automatiskt.
+  // Vanliga frågor. {pris}, {mal}, {minimum} och {marginal} (till lagkassan per kaka) fylls i automatiskt.
   faq: [
     { f: "Vad går pengarna till?",
       s: "Pengarna ska vara en grund för cuper, aktiviteter och annat som kan förgylla barnens vardag i P2019-laget." },
     { f: "Varför just de här kakorna?",
       s: "En stor andel av priset går tillbaka till laget. Eftersom kakan har klubbens logga sprider den dessutom föreningens namn." },
     { f: "Vad kostar det och hur betalar jag?",
-      s: "{pris} per kaka. Du swishar direkt när du har beställt. Efter beställningen visas Swish-nummer, belopp och ett meddelande att skriva, så att vi hittar din betalning." },
+      s: "Du köper kakorna av laget för {pris} styck och swishar direkt när du har beställt. Efter beställningen visas Swish-nummer, belopp och ett meddelande att skriva, så att vi hittar din betalning." },
+    { f: "Vad ska jag ta betalt när jag säljer vidare?",
+      s: "Det bestämmer du själv. Rekommenderat pris är {pris} per kaka, och då går du jämnt ut. Många säljer också 4 för 100 kr, vilket kan vara lättare att sälja. Då står du själv för mellanskillnaden (5 kr per kaka). Laget får lika mycket oavsett: {marginal} per kaka går direkt till lagkassan." },
     { f: "Hur många ska vi sälja?",
       s: "Målet är minst 10 kakor per barn. Några säljer fler och några färre, men tillsammans blir det ett bra tillskott till laget. Beställ det du tror att du kan sälja, eftersom leverantören inte tar tillbaka osålda kakor. Börja gärna med familj, släkt och grannar." },
     { f: "Vad händer om vi når {mal} kakor?",
@@ -233,7 +236,8 @@ const CONFIG = {
   function fill(s) {
     return String(s).replace(/\{mal\}/g, new Intl.NumberFormat("sv-SE").format(CONFIG.mal))
       .replace(/\{minimum\}/g, new Intl.NumberFormat("sv-SE").format(CONFIG.minimum))
-      .replace(/\{pris\}/g, CONFIG.pris + " kr");
+      .replace(/\{pris\}/g, CONFIG.pris + " kr")
+      .replace(/\{marginal\}/g, kr(marginal));
   }
 
   function kr(n) {
@@ -326,7 +330,7 @@ const CONFIG = {
   function renderForm() {
     content.textContent = "";
     if (demo) content.appendChild(h("p", { class: "notice", text: "Förhandsvisning med exempeldata. Beställningar skickas inte förrän sidan är kopplad till Apps Script." }));
-    content.appendChild(h("div", { style: "margin-top:16px" }, h("h2", { class: "title", text: "Beställ" }), h("p", { class: "lead", text: CONFIG.intro })));
+    content.appendChild(h("div", { style: "margin-top:16px" }, h("h2", { class: "title", text: "Beställ" }), h("p", { class: "lead", text: fill(CONFIG.intro) })));
 
     var errBox = h("p", { class: "formerror", role: "alert", hidden: "" });
     var form = h("form", { class: "card", novalidate: "", autocomplete: "off", style: "margin-top:16px" }, errBox);
@@ -370,7 +374,7 @@ const CONFIG = {
     form.appendChild(h("div", { class: "field" },
       h("span", { class: "label", text: "Hur många kakor?" }),
       h("div", { class: "product" }, h("div", { class: "ico", "aria-hidden": "true", text: P.emoji }),
-        h("div", null, h("div", { class: "name", text: P.namn }), h("div", { class: "meta", text: P.detalj + " · " + kr(CONFIG.pris) + "/st" }))),
+        h("div", null, h("div", { class: "name", text: P.namn }), h("div", { class: "meta", text: P.detalj + " · " + kr(CONFIG.pris) + "/st (rekommenderat försäljningspris)" }))),
       h("div", { class: "stepper" },
         h("button", { type: "button", "aria-label": "Minska antal", text: "−", onclick: function () { setAntal(state.antal - 1); } }), antalInp,
         h("button", { type: "button", "aria-label": "Öka antal", text: "+", onclick: function () { setAntal(state.antal + 1); } })),
