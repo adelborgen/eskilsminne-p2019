@@ -436,19 +436,6 @@ const CONFIG = {
       try { document.execCommand("copy"); flash(); } catch (e) {} document.body.removeChild(t);
     }
   }
-  // Swish officiella länkformat (samma som i Swish QR-koder). Låsta fält när edit utelämnas.
-  // Android: intent-länk som pekar ut appen direkt, annars kan webbläsaren visa en
-  // installationssida trots att Swish finns. iOS: vanlig länk (universell länk).
-  function swishUrl(nummer, belopp, meddelande) {
-    var sw = String(nummer).replace(/\D/g, "");
-    if (/^46\d{9}$/.test(sw)) sw = "0" + sw.slice(2);
-    var q = "sw=" + sw + "&amt=" + encodeURIComponent(String(belopp)) + "&cur=SEK&msg=" + encodeURIComponent(meddelande) + "&src=qr";
-    var https = "https://app.swish.nu/1/p/sw/?" + q;
-    if (/Android/i.test(navigator.userAgent)) {
-      return "intent://app.swish.nu/1/p/sw/?" + q + "#Intent;scheme=https;package=se.bankgirot.swish;S.browser_fallback_url=" + encodeURIComponent(https) + ";end";
-    }
-    return https;
-  }
 
   function renderDone(p, orderId, belopp) {
     content.textContent = "";
@@ -466,9 +453,8 @@ const CONFIG = {
       if (CONFIG.swish.namnPaKonto) swish.appendChild(h("p", { class: "small", style: "margin:0 0 6px", text: "Mottagare: " + CONFIG.swish.namnPaKonto }));
       swish.appendChild(row("Belopp", kr(belopp), String(belopp)));
       swish.appendChild(row("Meddelande", meddelande, meddelande));
-      swish.appendChild(h("a", { class: "primary", style: "margin-top:14px", href: swishUrl(nummer, belopp, meddelande), text: "Öppna Swish" }));
       swish.appendChild(h("ol", { class: "steps small" },
-        h("li", { text: "Tryck på Öppna Swish, eller öppna Swish själv och fyll i uppgifterna ovan." }),
+        h("li", { text: "Öppna Swish och fyll i numret, beloppet och meddelandet ovan. Tryck Kopiera för att slippa skriva." }),
         h("li", { text: "Behåll meddelandet. Det är så vi hittar din betalning." }),
         h("li", { text: "Klart! Du behöver inte göra något mer." })));
     } else {
