@@ -95,9 +95,22 @@ P2019-sidan i roten och dess skript (`Code.gs`) fortsätter som idag tills förs
 - **Som mapp i det här repot:** när grenen slås ihop med `main` ligger sidan på `https://adelborgen.github.io/eskilsminne-p2019/klubb/` och adminvyn på `…/klubb/admin.html`.
 - **Med egen domän:** lägg mappens innehåll i roten av ett nytt repo (gärna under en GitHub-organisation), slå på Pages och ange domänen under *Settings → Pages → Custom domain* med en CNAME-post hos registratorn.
 
+## Beslut hittills (oktober 2026)
+
+Tagna efter granskningen av designbriefen "Kassaskrinet":
+
+1. **Bara Eskilsminne IF.** Designen delas i lager (plattform, förening, grupp, försäljning) så att den går att bygga ut, men vi bygger inte plattformsadmin, temaeditor eller fler föreningstyper. En dialekt: Matchdag.
+2. **Ingen förifylld Swish.** Föräldern kopierar nummer, belopp och meddelande. Appen försöker inte öppna Swish. (Redan så i prototypen.)
+3. **Swish-meddelandet innehåller bara ordernumret**, inte barnets namn. (Redan så i prototypen.) Kassören slår upp namnet i adminvyn.
+4. **Mätarens "till lagkassan" märks "beräknat"**, eftersom pengarna inte är inne förrän de är swishade. Ännu inte ändrat i prototypen.
+5. **Typsnitten ligger i repot** (`fonts/`: Archivo och Atkinson Hyperlegible Next) och laddas inte från Google. Inte kopplade till appen än.
+6. **"Kassaskrinet" är ett arbetsnamn.** Byt innan lansering: kontrollera domän och varumärke. Briefen anger att kassaskrinet.se och klubbkassan.se redan är upptagna.
+
+Det som designbriefen beskriver och som ännu inte finns i prototypen: försäljning som egen nivå (flera per grupp, status på försäljningen), kvittosida som tål omladdning, ordernummer med lagkod (P14-037), ångra-fönster på 8 sekunder, rensa-knapp per lag, och utseendet (Matchdag).
+
 ## Att bestämma innan ni går live
 
-1. **Namn.** "Lagförsäljning" är en platshållare. Välj ett namn som inte krockar med någon annan tjänst (kolla domän och varumärke).
+1. **Namn.** "Lagförsäljning" i prototypen och "Kassaskrinet" i designbriefen är arbetsnamn. Välj ett namn som inte krockar med någon annan tjänst (kolla domän och varumärke).
 2. **Klubbens godkännande** för namn, logga och färger (färgerna är de som redan används på P2019-sidan, se `../README.md`), och för att administratören sköter servern.
 3. **En andra administratör** som kommer åt kalkylarket, Apps Script-projektet, GitHub och domänen.
 4. **Uppdraget kring personuppgifter** (se ovan).
