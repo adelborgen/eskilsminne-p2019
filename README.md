@@ -2,7 +2,7 @@
 
 En enkel sida med tre flikar: **Beställ** (öppnas först), **Översikt** och **Vanliga frågor**. Föräldern väljer antal kakor, beställer och får en bekräftelse med Swish-instruktioner. Under Översikt visas två mätare för hela laget (de hämtas i bakgrunden när sidan laddas):
 
-1. **Beställt**: antal kakor mot målet 300. Beställs 300 eller fler blir det en överraskning för barnen på sista träningen före jul, och det står i mätaren.
+1. **Beställt**: antal kakor mot målet 400 (`mal`). Kommer laget över 300 (`overraskning`) blir det en överraskning för barnen på sista träningen före jul, och det syns som en markering 🎁 i mätaren.
 2. **Direkt till lagkassan**: 30 kr − 14,50 kr = 15,50 kr per kaka, summerat.
 
 Minimum 240 (vad vi behöver för att kunna beställa från Marabou) nämns bara i en fråga under Vanliga frågor, inte i mätare, formulär eller kvitto.
@@ -72,7 +72,7 @@ Gör en testbeställning och radera testraden i arket.
 
 ## Innan ni går live: besluta
 
-0. **Belöningen vid 300.** Beslutat: beställs 300 eller fler blir det en mindre överraskning för barnen på sista träningen före jul. Vid 300 kakor kommer 4 650 kr in direkt till lagkassan. Texten finns i `belonning`, i FAQ-frågan "Vad händer om vi når 300 kakor?" och i mätaren.
+0. **Mål och överraskning.** Beslutat: målet är 400 kakor. Kommer laget över 300 blir det en mindre överraskning för barnen på sista träningen före jul. Vid 300 kakor kommer 4 650 kr in direkt till lagkassan, vid 400 kakor 6 200 kr. Ändras i `mal`, `overraskning` och `belonning`.
 
 1. **Swish-nummer.** Andreas Adelborg tar emot betalningarna på sitt privata nummer 073 028 18 22. Mottagarens namn visas i bekräftelsen så att föräldrarna känner igen det i Swish. Byt till klubbens eget nummer om ett sådant kommer (`swish.nummer` och `swish.namnPaKonto` i `CONFIG`).
 2. **Återbetalning.** Beslutat: nås inte 240 betalar Andreas Adelborg tillbaka varje Swish. Det står på sidan och i Vanliga frågor.
