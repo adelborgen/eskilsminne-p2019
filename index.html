@@ -190,9 +190,10 @@ const CONFIG = {
          "Du behöver alltså inte behålla kakorna själv. " +
          "Du köper dem av laget för {pris} styck, vilket också är det rekommenderade priset när du säljer vidare. " +
          "Pengarna går till cuper, aktiviteter och annat som förgyller barnens vardag i laget. Målet är minst 10 kakor per barn.",
-  aterbetalning: "Kan vi av något skäl inte genomföra beställningen betalar vi tillbaka din Swish. Läs mer under Vanliga frågor.",
+  sistaDag: "torsdag 15 oktober",  // visas överst på Beställ, i bekräftelsen och i Vanliga frågor. Tom = visas inte.
+  aterbetalning: "Vi lägger beställningen hos Marabou när laget har fått ihop tillräckligt många beställningar. Blir det inte av får du tillbaka hela beloppet.",
   belonning: "Beställs {mal} kakor eller fler blir det en överraskning för barnen på sista träningen före jul.",
-  utlamning: "Information om när och var kakorna delas ut kommer inom kort.",
+  utlamning: "Vad händer nu? När beställningstiden är slut ({sista}) beställer vi kakorna. Vi meddelar i lagets WhatsApp-grupp när de kan hämtas.",
   kontakt: "Hittar du inte svaret? Skriv i lagets WhatsApp-grupp.",
 
   // Vanliga frågor. {pris}, {mal}, {minimum} och {marginal} (till lagkassan per kaka) fylls i automatiskt.
@@ -205,6 +206,8 @@ const CONFIG = {
       s: "Du köper kakorna av laget för {pris} styck och swishar direkt när du har beställt. Efter beställningen visas Swish-nummer, belopp och ett meddelande att skriva, så att vi hittar din betalning." },
     { f: "Vad ska jag ta betalt när jag säljer vidare?",
       s: "Det bestämmer du själv. Rekommenderat pris är {pris} per kaka, och då går du jämnt ut. Många säljer också 4 för 100 kr, vilket kan vara lättare att sälja. Då står du själv för mellanskillnaden (5 kr per kaka). Laget får lika mycket oavsett: {marginal} per kaka går direkt till lagkassan." },
+    { f: "När är sista dag att beställa?",
+      s: "Beställ senast {sista}. Då lägger vi beställningen hos Marabou, så att kakorna kommer i god tid före julförsäljningarna." },
     { f: "Hur många ska vi sälja?",
       s: "Målet är minst 10 kakor per barn. Några säljer fler och några färre, men tillsammans blir det ett bra tillskott till laget. Beställ det du tror att du kan sälja, eftersom leverantören inte tar tillbaka osålda kakor. Börja gärna med familj, släkt och grannar." },
     { f: "Vad händer om vi når {mal} kakor?",
@@ -238,7 +241,8 @@ const CONFIG = {
     return String(s).replace(/\{mal\}/g, new Intl.NumberFormat("sv-SE").format(CONFIG.mal))
       .replace(/\{minimum\}/g, new Intl.NumberFormat("sv-SE").format(CONFIG.minimum))
       .replace(/\{pris\}/g, CONFIG.pris + " kr")
-      .replace(/\{marginal\}/g, kr(marginal));
+      .replace(/\{marginal\}/g, kr(marginal))
+      .replace(/\{sista\}/g, CONFIG.sistaDag || "sista beställningsdagen");
   }
 
   function kr(n) {
@@ -331,7 +335,9 @@ const CONFIG = {
   function renderForm() {
     content.textContent = "";
     if (demo) content.appendChild(h("p", { class: "notice", text: "Förhandsvisning med exempeldata. Beställningar skickas inte förrän sidan är kopplad till Apps Script." }));
-    content.appendChild(h("div", { style: "margin-top:16px" }, h("h2", { class: "title", text: "Beställ" }), h("p", { class: "lead", text: fill(CONFIG.intro) })));
+    content.appendChild(h("div", { style: "margin-top:16px" }, h("h2", { class: "title", text: "Beställ" }),
+      CONFIG.sistaDag ? h("p", { class: "notice", style: "margin-top:8px" }, "Beställ senast ", h("strong", { text: CONFIG.sistaDag }), ".") : null,
+      h("p", { class: "lead", text: fill(CONFIG.intro) })));
 
     var errBox = h("p", { class: "formerror", role: "alert", hidden: "" });
     var form = h("form", { class: "card", novalidate: "", autocomplete: "off", style: "margin-top:16px" }, errBox);
@@ -482,7 +488,7 @@ const CONFIG = {
       swish,
       h("p", { class: "small", style: "margin:14px 0 0", text: "Ordernummer: " + orderId + ". Ta gärna en skärmdump." }),
       h("p", { class: "small", text: "Din beställning räknas som klar när betalningen har kommit in." }),
-      h("p", { text: CONFIG.utlamning }),
+      h("p", { text: fill(CONFIG.utlamning) }),
       h("p", { class: "small", text: CONFIG.aterbetalning }),
       h("p", { class: "small", text: CONFIG.kontakt }),
       h("button", { type: "button", class: "ghost", text: "Gör en ny beställning",
