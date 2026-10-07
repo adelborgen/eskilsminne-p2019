@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#174297">
-<title>Chokladförsäljning</title>
+<title>Eskilsminne IF – Lagförsäljning P2019</title>
 <style>
   /* Färger: Eskilsminne IF blå #174297 (accent) och gul #faeb1e (markering).
      Bekräfta mot klubbens grafiska profil. */
@@ -167,8 +167,8 @@ const CONFIG = {
   klubb: "Eskilsminne IF",
   lag: "P2019",                       // måste finnas i ALLOWED_LAG i Code.gs
   motto: "Respekt – Kamratskap – Jämlikhet",
-  titel: "Eskilsminne försäljning",
-  undertitel: "Lagkassan",
+  titel: "Lagförsäljning",
+  undertitel: "Eskilsminne IF",
 
   // Webbadressen till Apps Script (se README.md). Tom = förhandsvisning med exempeldata.
   endpoint: "https://script.google.com/macros/s/AKfycbynyAJdsBp7DcwXx9NW-71FmZ307DfTU77ZgN47myDU99d4_BjrPfMzxWVSpmZs5DMhxA/exec",
@@ -271,7 +271,7 @@ const CONFIG = {
   document.getElementById("pill").textContent = CONFIG.lag;
   document.getElementById("club").textContent = CONFIG.undertitel;
   document.getElementById("apptitle").textContent = CONFIG.titel;
-  document.title = CONFIG.titel + " – " + CONFIG.lag;
+  document.title = CONFIG.klubb + " – " + CONFIG.titel + " " + CONFIG.lag;
   if (CONFIG.logo) { var lg = document.getElementById("logo"); lg.src = CONFIG.logo; lg.alt = CONFIG.klubb; lg.hidden = false; }
   var foot = document.getElementById("foot");
   foot.appendChild(h("strong", { text: CONFIG.klubb }));
