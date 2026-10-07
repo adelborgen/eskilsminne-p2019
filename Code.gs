@@ -220,9 +220,19 @@ function kollaTelegram() {
     var props = PropertiesService.getScriptProperties();
     var offset = Number(props.getProperty("TG_OFFSET") || 0);
     var chat = tg().chat;
-    var updates = tgApi("getUpdates", { offset: offset, timeout: 0, allowed_updates: JSON.stringify(["message", "callback_query"]) });
+    var updates = tgApi("getUpdates", { offset: String(offset), timeout: "0", allowed_updates: JSON.stringify(["message", "callback_query"]) });
+    if (!updates.length) return;
+    // Kvittera direkt hos Telegram, innan något behandlas, så att samma meddelande
+    // aldrig kommer tillbaka nästa minut (även om något nedan skulle gå fel).
+    var nasta = updates[updates.length - 1].update_id + 1;
+    props.setProperty("TG_OFFSET", String(nasta));
+    tgApi("getUpdates", { offset: String(nasta), limit: "1", timeout: "0" });
+    // Extra skydd: hoppa över uppdateringar som redan har behandlats.
+    var cache = CacheService.getScriptCache();
     updates.forEach(function (u) {
-      props.setProperty("TG_OFFSET", String(u.update_id + 1));
+      var nyckel = "tg" + u.update_id;
+      if (cache.get(nyckel)) return;
+      cache.put(nyckel, "1", 21600);
       try {
         if (u.callback_query) {
           var cq = u.callback_query, m = cq.message;
