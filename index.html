@@ -179,8 +179,8 @@ const CONFIG = {
   pris: 30,            // kr per kaka som föräldern swishar
   inkopspris: 14.5,    // kr per kaka vi betalar Marabou (inkl. tryck, frakt, moms). Kontrollera mot offerten.
   minimum: 240,        // minst så många behövs för att vi ska kunna beställa
-  mal: 300,            // målet med överraskningen. Visas som en markering i mätaren.
-  matarMax: 400,       // mätarens slut
+  mal: 400,            // lagets mål = mätarens slut
+  overraskning: 300,   // över så här många kakor blir det en överraskning. Markering i mätaren.
   maxAntal: 50,        // största antal per beställning
   snabbval: [5, 10, 15, 20],
 
@@ -193,11 +193,11 @@ const CONFIG = {
          "Pengarna går till cuper, aktiviteter och annat som förgyller barnens vardag i laget. Målet är minst 10 kakor per barn.",
   sistaDag: "torsdag 15 oktober",  // visas överst på Beställ, i bekräftelsen och i Vanliga frågor. Tom = visas inte.
   aterbetalning: "Vi lägger beställningen hos Marabou när laget har fått ihop tillräckligt många beställningar. Blir det inte av får du tillbaka hela beloppet.",
-  belonning: "Beställs {mal} kakor eller fler blir det en överraskning för barnen på sista träningen före jul.",
+  belonning: "Kommer vi över {overraskning} kakor blir det en överraskning för barnen på sista träningen före jul.",
   utlamning: "Vad händer nu? När beställningstiden är slut ({sista}) beställer vi kakorna. Vi meddelar i lagets WhatsApp-grupp när de kan hämtas.",
   kontakt: "Hittar du inte svaret? Skriv i lagets WhatsApp-grupp.",
 
-  // Vanliga frågor. {pris}, {mal}, {minimum} och {marginal} (till lagkassan per kaka) fylls i automatiskt.
+  // Vanliga frågor. {pris}, {mal}, {overraskning}, {minimum} och {marginal} (till lagkassan per kaka) fylls i automatiskt.
   faq: [
     { f: "Vad går pengarna till?",
       s: "Pengarna ska vara en grund för cuper, aktiviteter och annat som kan förgylla barnens vardag i P2019-laget." },
@@ -211,8 +211,8 @@ const CONFIG = {
       s: "Beställ senast {sista}. Då lägger vi beställningen hos Marabou, så att kakorna kommer i god tid före julförsäljningarna." },
     { f: "Hur många ska vi sälja?",
       s: "Målet är minst 10 kakor per barn. Några säljer fler och några färre, men tillsammans blir det ett bra tillskott till laget. Beställ det du tror att du kan sälja, eftersom leverantören inte tar tillbaka osålda kakor. Börja gärna med familj, släkt och grannar." },
-    { f: "Vad händer om vi når {mal} kakor?",
-      s: "Beställs {mal} kakor eller fler blir det en överraskning för barnen på sista träningen före jul. Allt över {mal} är bonus till lagkassan." },
+    { f: "Vad är målet?",
+      s: "Lagets mål är {mal} kakor. Kommer vi över {overraskning} blir det en överraskning för barnen på sista träningen före jul. Allt vi säljer går till lagkassan." },
     { f: "Vad händer om det inte blir tillräckligt många beställningar?",
       s: "Vi beställer från leverantören först när vi har minst {minimum} kakor beställda. Om vi inte når dit kan vi inte lägga beställningen, och då betalar vi tillbaka din Swish." },
     { f: "När och var får jag kakorna?",
@@ -242,6 +242,7 @@ const CONFIG = {
   var marginal = CONFIG.pris - CONFIG.inkopspris;
   function fill(s) {
     return String(s).replace(/\{mal\}/g, new Intl.NumberFormat("sv-SE").format(CONFIG.mal))
+      .replace(/\{overraskning\}/g, new Intl.NumberFormat("sv-SE").format(CONFIG.overraskning))
       .replace(/\{minimum\}/g, new Intl.NumberFormat("sv-SE").format(CONFIG.minimum))
       .replace(/\{pris\}/g, CONFIG.pris + " kr")
       .replace(/\{marginal\}/g, kr(marginal))
@@ -309,15 +310,15 @@ const CONFIG = {
     metersBox.textContent = "";
     var n = state.bestallt;
     if (n == null) { metersBox.appendChild(h("p", { class: "loading", text: state.statusFel ? "Det gick inte att hämta översikten just nu. Försök igen om en stund." : "Hämtar översikten…" })); return; }
-    var mal = CONFIG.mal, matarMax = Math.max(CONFIG.matarMax || mal, mal), cap1, reward = fill(CONFIG.belonning);
-    if (n < mal) cap1 = [{ b: nf.format(mal - n) + " kvar till " + nf.format(mal) + ". " }, reward];
-    else cap1 = [{ b: "Målet nått! " }, "Det blir en överraskning för barnen på sista träningen före jul." + (n > mal ? " Allt över " + nf.format(mal) + " är bonus: +" + nf.format(n - mal) + " kakor." : "")];
+    var mal = CONFIG.mal, ov = CONFIG.overraskning, cap1;
+    if (n < ov) cap1 = [{ b: nf.format(ov - n) + " kvar till " + nf.format(ov) + ". " }, fill(CONFIG.belonning) + " Målet är " + nf.format(mal) + "."];
+    else if (n < mal) cap1 = [{ b: "Över " + nf.format(ov) + "! " }, "Det blir en överraskning för barnen på sista träningen före jul. " + nf.format(mal - n) + " kvar till målet " + nf.format(mal) + "."];
+    else cap1 = [{ b: "Målet nått! " }, "Det blir en överraskning för barnen på sista träningen före jul." + (n > mal ? " +" + nf.format(n - mal) + " kakor över målet." : "")];
 
     var card = h("div", { class: "card meters" }, h("p", { class: "kicker", text: "Hela laget just nu" }),
-      meter({ label: "Beställt", big: nf.format(n), small: "kakor (mål " + nf.format(mal) + ")", value: n, max: matarMax,
-        markerAt: mal, markerLabel: "Mål " + nf.format(mal), aria: "Beställda kakor", cap: cap1 }),
-      meter({ label: "Direkt till lagkassan", big: kr(n * marginal), small: "hittills", value: n * marginal, max: matarMax * marginal,
-        markerAt: mal * marginal, markerLabel: kr(mal * marginal),
+      meter({ label: "Beställt", big: nf.format(n), small: "av " + nf.format(mal) + " kakor", value: n, max: mal,
+        markerAt: ov, markerLabel: "🎁 " + nf.format(ov), aria: "Beställda kakor", cap: cap1 }),
+      meter({ label: "Direkt till lagkassan", big: kr(n * marginal), small: "hittills", value: n * marginal, max: mal * marginal,
         aria: "Pengar till lagkassan",
         cap: [{ b: kr(marginal) }, " av varje kaka går direkt till lagkassan. Vid " + nf.format(mal) + " kakor blir det " + kr(mal * marginal) + "."] }));
     metersBox.appendChild(card);
