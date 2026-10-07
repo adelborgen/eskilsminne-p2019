@@ -79,7 +79,7 @@ Gör en testbeställning och radera testraden i arket.
 3. **Inköpspriset 14,50 kr.** Det kommer från Marabous beställningssida. Kontrollera mot den faktiska offerten, eftersom mätaren för lagkassan räknar på det.
 4. **Kartonger.** Marabou levererar i kartonger om 24. Minimum 240 är 10 kartonger. 300 kakor blir 12,5, alltså 13 kartonger (312 kakor).
 5. **Personuppgifter.** Sidan samlar barnets förnamn och ett mobilnummer. Klubben är personuppgiftsansvarig, så stäm av med dem vem som får se arket.
-6. **Swish-knappen** använder Swish officiella länkformat `https://app.swish.nu/1/p/sw/?sw=…&amt=…&cur=SEK&msg=…&src=qr` (samma som i Swish QR-koder), med låsta fält. På Android blir det en `intent://`-länk som pekar ut Swish-appen direkt. Det tidigare formatet `swish://payment?data=…` gav "Felaktig länk" i Swish på iPhone. Kopiera-knapparna fungerar alltid som reservlösning. Testa knappen på både iPhone och Android innan ni skickar ut länken.
+6. **Ingen "Öppna Swish"-knapp.** Vi testade sex länkformat på iPhone (`https://app.swish.nu/1/p/sw/…` som i Swish QR-koder, `intent://` och tre varianter av `swish://payment?data=…`). Alla gav "Felaktig länk" eller öppnade inte appen, så knappen är borttagen. Föräldrarna kopierar nummer, belopp och meddelande med kopiera-knapparna. Testsidan ligger kvar i `swish-test.html` om någon vill prova igen.
 
 ## Färger och logga
 
