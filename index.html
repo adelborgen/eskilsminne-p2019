@@ -184,7 +184,7 @@ const CONFIG = {
   intro: "Beställ klubbens chokladkaka med logga. Pengarna går till cuper, aktiviteter och annat som förgyller barnens vardag i laget. " +
          "Målet är minst 10 kakor per barn.",
   aterbetalning: "Kan vi av något skäl inte genomföra beställningen betalar vi tillbaka din Swish. Läs mer under Vanliga frågor.",
-  belonning: "Beställs {mal} kakor eller fler gör vi något extra för barnen redan vid avslutningen före jul.",
+  belonning: "Beställs {mal} kakor eller fler blir det en överraskning för barnen på sista träningen före jul.",
   utlamning: "Information om när och var kakorna delas ut kommer inom kort.",
   kontakt: "Hittar du inte svaret? Skriv i lagets WhatsApp-grupp.",
 
@@ -199,7 +199,7 @@ const CONFIG = {
     { f: "Hur många ska vi sälja?",
       s: "Målet är minst 10 kakor per barn. Några säljer fler och några färre, men tillsammans blir det ett bra tillskott till laget. Beställ det du tror att du kan sälja, eftersom leverantören inte tar tillbaka osålda kakor. Börja gärna med familj, släkt och grannar." },
     { f: "Vad händer om vi når {mal} kakor?",
-      s: "Beställs {mal} kakor eller fler gör vi något extra för barnen redan vid avslutningen före jul. Allt över {mal} är bonus till lagkassan." },
+      s: "Beställs {mal} kakor eller fler blir det en överraskning för barnen på sista träningen före jul. Allt över {mal} är bonus till lagkassan." },
     { f: "Vad händer om det inte blir tillräckligt många beställningar?",
       s: "Vi beställer från leverantören först när vi har minst {minimum} kakor beställda. Om vi inte når dit kan vi inte lägga beställningen, och då betalar vi tillbaka din Swish." },
     { f: "När och var får jag kakorna?",
@@ -294,7 +294,7 @@ const CONFIG = {
     if (n == null) return;
     var mal = CONFIG.mal, cap1, reward = fill(CONFIG.belonning);
     if (n < mal) cap1 = [{ b: nf.format(mal - n) + " kvar till " + nf.format(mal) + ". " }, reward];
-    else cap1 = [{ b: "Målet nått! " }, "Vi gör något extra för barnen redan vid avslutningen före jul." + (n > mal ? " Allt över " + nf.format(mal) + " är bonus: +" + nf.format(n - mal) + " kakor." : "")];
+    else cap1 = [{ b: "Målet nått! " }, "Det blir en överraskning för barnen på sista träningen före jul." + (n > mal ? " Allt över " + nf.format(mal) + " är bonus: +" + nf.format(n - mal) + " kakor." : "")];
 
     var card = h("div", { class: "card meters" }, h("p", { class: "kicker", text: "Hela laget just nu" }),
       meter({ label: "Beställt", big: nf.format(n), small: "av " + nf.format(mal) + " kakor", value: n, max: mal,
