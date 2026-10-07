@@ -186,9 +186,10 @@ const CONFIG = {
   // Swish. nummer = mottagaren. meddelande = text som förifylls, följd av ordernumret.
   swish: { nummer: "073 028 18 22", namnPaKonto: "Andreas Adelborg", meddelande: "Eskils 2019 försäljning" },
 
-  intro: "Beställ klubbens chokladkaka med logga. Pengarna går till cuper, aktiviteter och annat som förgyller barnens vardag i laget. " +
-         "Du köper kakorna av laget för {pris} styck, vilket också är det rekommenderade priset när du säljer dem vidare. " +
-         "Målet är minst 10 kakor per barn.",
+  intro: "Beställ klubbens chokladkaka med logga och sälj den vidare till familj, släkt, grannar och arbetskamrater. " +
+         "Du behöver alltså inte behålla kakorna själv. " +
+         "Du köper dem av laget för {pris} styck, vilket också är det rekommenderade priset när du säljer vidare. " +
+         "Pengarna går till cuper, aktiviteter och annat som förgyller barnens vardag i laget. Målet är minst 10 kakor per barn.",
   aterbetalning: "Kan vi av något skäl inte genomföra beställningen betalar vi tillbaka din Swish. Läs mer under Vanliga frågor.",
   belonning: "Beställs {mal} kakor eller fler blir det en överraskning för barnen på sista träningen före jul.",
   utlamning: "Information om när och var kakorna delas ut kommer inom kort.",
@@ -372,7 +373,7 @@ const CONFIG = {
     });
 
     form.appendChild(h("div", { class: "field" },
-      h("span", { class: "label", text: "Hur många kakor?" }),
+      h("span", { class: "label", text: "Hur många kakor tror ni att ni kan sälja?" }),
       h("div", { class: "product" }, h("div", { class: "ico", "aria-hidden": "true", text: P.emoji }),
         h("div", null, h("div", { class: "name", text: P.namn }), h("div", { class: "meta", text: P.detalj + " · " + kr(CONFIG.pris) + "/st (rekommenderat försäljningspris)" }))),
       h("div", { class: "stepper" },
