@@ -235,7 +235,9 @@ const CONFIG = {
 
   var loadedAt = Date.now();
   var state = { bestallt: null, antal: 0, barn: "", mobil: "" };
-  var demo = !CONFIG.endpoint;
+  // Testläge: lägg till ?test i adressen. Då skickas inget och siffrorna är exempel.
+  var testlage = /[?&]test(=|&|$)/.test(location.search);
+  var demo = !CONFIG.endpoint || testlage;
   var marginal = CONFIG.pris - CONFIG.inkopspris;
   function fill(s) {
     return String(s).replace(/\{mal\}/g, new Intl.NumberFormat("sv-SE").format(CONFIG.mal))
@@ -334,7 +336,9 @@ const CONFIG = {
   /* ---------- Formulär ---------- */
   function renderForm() {
     content.textContent = "";
-    if (demo) content.appendChild(h("p", { class: "notice", text: "Förhandsvisning med exempeldata. Beställningar skickas inte förrän sidan är kopplad till Apps Script." }));
+    if (demo) content.appendChild(h("p", { class: "notice", text: testlage
+      ? "Testläge: ingenting sparas och du ska inte swisha. Siffrorna under Översikt är exempel."
+      : "Förhandsvisning med exempeldata. Beställningar skickas inte förrän sidan är kopplad till Apps Script." }));
     content.appendChild(h("div", { style: "margin-top:16px" }, h("h2", { class: "title", text: "Beställ" }),
       CONFIG.sistaDag ? h("p", { class: "notice", style: "margin-top:8px" }, "Beställ senast ", h("strong", { text: CONFIG.sistaDag }), ".") : null,
       h("p", { class: "lead", text: fill(CONFIG.intro) })));
@@ -482,7 +486,7 @@ const CONFIG = {
     }
 
     content.appendChild(h("div", { class: "card done", style: "margin-top:16px" },
-      h("p", { class: "okline", text: demo ? "Förhandsvisning (inget skickades)" : "Beställningen är mottagen" }),
+      h("p", { class: "okline", text: testlage ? "Testläge: inget skickades, swisha inte" : demo ? "Förhandsvisning (inget skickades)" : "Beställningen är mottagen" }),
       h("h2", { text: "Tack, " + p.barn + "!" }),
       h("div", { class: "sumrow" }, h("span", { class: "num", text: p.antal + " × " + CONFIG.produkt.namn }), h("span", { class: "num", text: kr(belopp) })),
       swish,
