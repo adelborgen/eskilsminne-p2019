@@ -125,6 +125,12 @@ function hanteraBestallning(e) {
   if (!(antal >= 1 && antal <= CFG.MAX_ANTAL && antal % 1 === 0)) return json({ ok: false, fel: "Välj mellan 1 och " + CFG.MAX_ANTAL + " kakor." });
   if (d.samtycke !== true) return json({ ok: false, fel: "Du behöver godkänna för att kunna beställa." });
 
+  // Har samma mobilnummer redan beställt? Fråga först, beställ bara om föräldern bekräftar.
+  if (d.bekraftaDubblett !== true) {
+    var tidigare = tidigareBestallningar(mobil, lag);
+    if (tidigare.length) return json({ ok: false, dubblett: true, tidigare: tidigare });
+  }
+
   // Spärr per mobilnummer
   var cache = CacheService.getScriptCache();
   var nyckel = "m" + mobil;
@@ -169,6 +175,20 @@ function raknaBestallt(lag) {
     if (r[2] === lag && String(r[COL.BETALD - 1]).toUpperCase() !== "AVBRUTEN") sum += Number(r[COL.ANTAL - 1]) || 0;
   });
   return sum;
+}
+
+// Aktiva beställningar (inte AVBRUTEN) från ett mobilnummer. Bara ordernummer och antal
+// skickas tillbaka, inga namn, så att ingen kan slå upp andras uppgifter.
+function tidigareBestallningar(mobil, lag) {
+  var sh = SpreadsheetApp.getActive().getSheetByName(FLIK);
+  if (!sh || sh.getLastRow() < 2) return [];
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, RUBRIKER.length).getValues();
+  var ut = [];
+  rows.forEach(function (r) {
+    if (String(r[4]).replace(/^'/, "") === mobil && r[2] === lag && String(r[COL.BETALD - 1]).toUpperCase() !== "AVBRUTEN")
+      ut.push({ id: ("000" + parseInt(r[1], 10)).slice(-4), antal: Number(r[COL.ANTAL - 1]) || 0 });
+  });
+  return ut;
 }
 
 function normalizeMobil(s) {

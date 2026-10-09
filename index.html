@@ -432,20 +432,43 @@ const CONFIG = {
       if (!ok) { var f = form.querySelector(".error:not(:empty)"); if (f) f.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
 
       var payload = { lag: CONFIG.lag, barn: namn, mobil: tel, antal: state.antal, samtycke: true, website: hp.value, t: Date.now() - loadedAt };
+      dubbelBox.hidden = true;
+      skicka(payload);
+    });
+
+    // Ruta som visas om samma mobilnummer redan har beställt.
+    var dubbelBox = h("div", { class: "notice", role: "alert", hidden: "", style: "margin:0 0 12px" });
+    form.insertBefore(dubbelBox, submit);
+
+    function fail(msg) {
+      submit.disabled = false; submit.textContent = "Beställ och gå vidare till Swish";
+      errBox.textContent = msg; errBox.hidden = false; errBox.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+    function visaDubblett(payload, tidigare) {
+      submit.disabled = false; submit.textContent = "Beställ och gå vidare till Swish";
+      dubbelBox.textContent = "";
+      var lista = tidigare.map(function (t) { return "order " + t.id + " (" + t.antal + " kakor)"; }).join(", ");
+      dubbelBox.appendChild(h("p", { style: "margin:0 0 6px" }, h("strong", { text: "Du har redan beställt från det här numret: " }), lista + "."));
+      dubbelBox.appendChild(h("p", { style: "margin:0 0 10px", text: "Vill du lägga en ny beställning på " + payload.antal + " kakor utöver den? Vill du i stället ändra den du redan har gjort, skriv i lagets WhatsApp-grupp." }));
+      dubbelBox.appendChild(h("button", { type: "button", class: "primary", style: "margin-bottom:8px", text: "Ja, beställ " + payload.antal + " kakor till",
+        onclick: function () { dubbelBox.hidden = true; payload.bekraftaDubblett = true; skicka(payload); } }));
+      dubbelBox.appendChild(h("button", { type: "button", class: "ghost", text: "Nej, avbryt",
+        onclick: function () { dubbelBox.hidden = true; } }));
+      dubbelBox.hidden = false;
+      dubbelBox.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+    function skicka(payload) {
       submit.disabled = true; submit.textContent = "Skickar…";
-      function fail(msg) {
-        submit.disabled = false; submit.textContent = "Beställ och gå vidare till Swish";
-        errBox.textContent = msg; errBox.hidden = false; errBox.scrollIntoView({ block: "center", behavior: "smooth" });
-      }
       if (demo) { setTimeout(function () { success(payload, "DEMO0001", payload.antal * CONFIG.pris); }, 400); return; }
       fetch(CONFIG.endpoint, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d && d.ok) success(payload, d.id, typeof d.belopp === "number" ? d.belopp : payload.antal * CONFIG.pris);
+          else if (d && d.dubblett && d.tidigare && d.tidigare.length) visaDubblett(payload, d.tidigare);
           else fail((d && d.fel) || "Något gick fel. Försök igen.");
         })
         .catch(function () { fail("Det gick inte att skicka just nu. Kontrollera uppkopplingen och försök igen, eller hör av dig i WhatsApp-gruppen."); });
-    });
+    }
   }
 
   function success(p, orderId, belopp) {
