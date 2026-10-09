@@ -12,7 +12,10 @@ var CFG = {
   ALLOWED_LAG: ["P2019"], // lag som får beställa (samma som lag)
   MIN_TID_MS: 3000,       // snabbare än så från att sidan laddats = robot
   MAX_PER_MOBIL: 5,       // högst så många beställningar per mobilnummer ...
-  SPARR_MINUTER: 10       // ... under så här många minuter
+  SPARR_MINUTER: 10,      // ... under så här många minuter
+  // Påhittade nummer som inte tas emot (exempelnumret på sidan m.fl.).
+  // Nummer som bara är samma siffra efter 07 (t.ex. 0700000000) spärras också.
+  SPARRADE_NUMMER: ["0701234567", "0712345678", "0731234567", "0761234567", "0721234567"]
 };
 
 var FLIK = "Beställningar";
@@ -117,6 +120,8 @@ function hanteraBestallning(e) {
   if (CFG.ALLOWED_LAG.indexOf(lag) < 0) return json({ ok: false, fel: "Okänt lag." });
   if (!/^[\p{L}][\p{L} '\-.]{1,39}$/u.test(barn)) return json({ ok: false, fel: "Skriv barnets namn (2–40 tecken)." });
   if (!/^07\d{8}$/.test(mobil)) return json({ ok: false, fel: "Skriv ett svenskt mobilnummer, till exempel 070 123 45 67." });
+  if (CFG.SPARRADE_NUMMER.indexOf(mobil) >= 0 || /^07(\d)\1{7}$/.test(mobil))
+    return json({ ok: false, fel: "Skriv ditt eget mobilnummer, så att vi kan nå dig om beställningen." });
   if (!(antal >= 1 && antal <= CFG.MAX_ANTAL && antal % 1 === 0)) return json({ ok: false, fel: "Välj mellan 1 och " + CFG.MAX_ANTAL + " kakor." });
   if (d.samtycke !== true) return json({ ok: false, fel: "Du behöver godkänna för att kunna beställa." });
 
