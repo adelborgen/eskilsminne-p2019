@@ -190,17 +190,26 @@ const CONFIG = {
   intro: "Beställ klubbens chokladkaka med logga och sälj den vidare till familj, släkt, grannar och arbetskamrater. " +
          "Du behöver alltså inte behålla kakorna själv. " +
          "Du köper dem av laget för {pris} styck, vilket också är det rekommenderade priset när du säljer vidare. " +
-         "Pengarna går till cuper, aktiviteter och annat som förgyller barnens vardag i laget. Målet är minst 10 kakor per barn.",
+         "Pengarna går till lagkassan och till aktiviteter som gör det roligare för barnen i laget. Målet är minst 10 kakor per barn.",
+  // Försäljningen stängd: Beställ-fliken visar en sammanfattning och säljer bara de extra
+  // kakorna i sista kartongen (kartonger × kartongStorlek − beställt), med nedräkning.
+  stangd: true,
+  kartonger: 25,
+  kartongStorlek: 24,
+  barnSomBestallt: "32 av 40",
+  bestalltVidStangning: 578,     // ger nedräkningens startvärde: 25 × 24 − 578 = 22 extra kakor
+  bingo: "Varje barn kan sälja 8 enkellotter. Lotterna beställs i Sportadmin, och överskottet delas mellan laget och föreningen. Mer information kommer i lagets WhatsApp-grupp.",
+  utlamningStangd: "Kakorna är beställda från Marabou och leveransen tar ungefär 1,5 vecka. Vi meddelar i lagets WhatsApp-grupp när de kan hämtas.",
   sistaDag: "torsdag 15 oktober",  // visas överst på Beställ, i bekräftelsen och i Vanliga frågor. Tom = visas inte.
   aterbetalning: "Vi lägger beställningen hos Marabou när laget har fått ihop tillräckligt många beställningar. Blir det inte av får du tillbaka hela beloppet.",
-  belonning: "Kommer vi över {overraskning} kakor blir det en överraskning för barnen på sista träningen före jul.",
+  belonning: "Kommer vi över {overraskning} kakor gör vi något extra för grabbarna under säsongen.",
   utlamning: "Vad händer nu? När beställningstiden är slut ({sista}) beställer vi kakorna. Vi meddelar i lagets WhatsApp-grupp när de kan hämtas.",
   kontakt: "Hittar du inte svaret? Skriv i lagets WhatsApp-grupp.",
 
   // Vanliga frågor. {pris}, {mal}, {overraskning}, {minimum} och {marginal} (till lagkassan per kaka) fylls i automatiskt.
   faq: [
     { f: "Vad går pengarna till?",
-      s: "Pengarna ska vara en grund för cuper, aktiviteter och annat som kan förgylla barnens vardag i P2019-laget." },
+      s: "Pengarna går till lagkassan och till aktiviteter som gör det roligare för barnen i P2019-laget." },
     { f: "Varför just de här kakorna?",
       s: "En stor andel av priset går tillbaka till laget. Eftersom kakan har klubbens logga sprider den dessutom föreningens namn." },
     { f: "Vad kostar det och hur betalar jag?",
@@ -212,7 +221,7 @@ const CONFIG = {
     { f: "Hur många ska vi sälja?",
       s: "Målet är minst 10 kakor per barn. Några säljer fler och några färre, men tillsammans blir det ett bra tillskott till laget. Beställ det du tror att du kan sälja, eftersom leverantören inte tar tillbaka osålda kakor. Börja gärna med familj, släkt och grannar." },
     { f: "Vad är målet?",
-      s: "Lagets mål är {mal} kakor. Kommer vi över {overraskning} blir det en överraskning för barnen på sista träningen före jul. Allt vi säljer går till lagkassan." },
+      s: "Lagets mål är {mal} kakor. Kommer vi över {overraskning} gör vi något extra för grabbarna under säsongen. Allt vi säljer går till lagkassan." },
     { f: "Vad händer om det inte blir tillräckligt många beställningar?",
       s: "Vi beställer från leverantören först när vi har minst {minimum} kakor beställda. Om vi inte når dit kan vi inte lägga beställningen, och då betalar vi tillbaka din Swish." },
     { f: "När och var får jag kakorna?",
@@ -312,8 +321,8 @@ const CONFIG = {
     if (n == null) { metersBox.appendChild(h("p", { class: "loading", text: state.statusFel ? "Det gick inte att hämta översikten just nu. Försök igen om en stund." : "Hämtar översikten…" })); return; }
     var mal = CONFIG.mal, ov = CONFIG.overraskning, cap1;
     if (n < ov) cap1 = [{ b: nf.format(ov - n) + " kvar till " + nf.format(ov) + ". " }, fill(CONFIG.belonning) + " Målet är " + nf.format(mal) + "."];
-    else if (n < mal) cap1 = [{ b: "Över " + nf.format(ov) + "! " }, "Det blir en överraskning för barnen på sista träningen före jul. " + nf.format(mal - n) + " kvar till målet " + nf.format(mal) + "."];
-    else cap1 = [{ b: "Målet nått! " }, "Det blir en överraskning för barnen på sista träningen före jul." + (n > mal ? " +" + nf.format(n - mal) + " kakor över målet." : "")];
+    else if (n < mal) cap1 = [{ b: "Över " + nf.format(ov) + "! " }, "Vi gör något extra för grabbarna under säsongen. " + nf.format(mal - n) + " kvar till målet " + nf.format(mal) + "."];
+    else cap1 = [{ b: "Målet nått! " }, "Vi gör något extra för grabbarna under säsongen." + (n > mal ? " +" + nf.format(n - mal) + " kakor över målet." : "")];
 
     var card = h("div", { class: "card meters" }, h("p", { class: "kicker", text: "Hela laget just nu" }),
       meter({ label: "Beställt", big: nf.format(n), small: "av " + nf.format(mal) + " kakor", value: n, max: mal,
@@ -325,15 +334,50 @@ const CONFIG = {
   }
 
   function loadStatus() {
-    if (demo) { state.bestallt = CONFIG.demoBestallt; renderMeters(); return; }
+    if (demo) { state.bestallt = CONFIG.stangd ? CONFIG.bestalltVidStangning : CONFIG.demoBestallt; renderMeters(); uppdateraStangd(); return; }
     fetch(CONFIG.endpoint + "?action=status&lag=" + encodeURIComponent(CONFIG.lag))
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.ok && typeof d.bestallt === "number") { state.bestallt = d.bestallt; state.statusFel = false; }
         else if (state.bestallt == null) state.statusFel = true;
         renderMeters();
+        uppdateraStangd();
       })
       .catch(function () { if (state.bestallt == null) { state.statusFel = true; renderMeters(); } });
+  }
+
+  /* ---------- Stängd försäljning: extra kakor ---------- */
+  function extraTotalt() { return CONFIG.kartonger * CONFIG.kartongStorlek; }
+  function kvarExtra() { return state.bestallt == null ? null : Math.max(0, extraTotalt() - state.bestallt); }
+  function maxNu() { return CONFIG.stangd ? Math.min(CONFIG.maxAntal, kvarExtra() || 0) : CONFIG.maxAntal; }
+  // Ritar om Beställ-fliken när antalet kvarvarande extra kakor ändras (men inte över ett kvitto).
+  var visatKvar;
+  function uppdateraStangd() {
+    if (!CONFIG.stangd || state.visarKvitto) return;
+    if (kvarExtra() !== visatKvar) renderForm();
+  }
+
+  function stangdHuvud() {
+    var n = state.bestallt, kvar = kvarExtra();
+    var box = h("div", { style: "margin-top:16px" }, h("h2", { class: "title", text: "Försäljningen är stängd" }),
+      h("p", { class: "lead", text: "Tack för ett grymt engagemang! " + CONFIG.barnSomBestallt + " barn har beställt" +
+        (n == null ? "." : " totalt " + nf.format(n) + " kakor.") + " " + CONFIG.utlamningStangd }));
+    var kort = h("div", { class: "card meters", style: "margin-top:16px" }, h("p", { class: "kicker", text: "Extra kakor" }));
+    if (kvar == null) kort.appendChild(h("p", { class: "loading", style: "color:inherit", text: "Hämtar antal kvar…" }));
+    else {
+      var startExtra = Math.max(kvar, extraTotalt() - CONFIG.bestalltVidStangning);
+      kort.appendChild(meter({ label: "Kvar att köpa", big: nf.format(kvar), small: kvar === 1 ? "kaka" : "kakor", value: kvar, max: Math.max(1, startExtra),
+        aria: "Extra kakor kvar",
+        cap: kvar > 0
+          ? ["Marabou levererar i hela kartonger om " + CONFIG.kartongStorlek + ", så vi har några kakor över. ", { b: "Först till kvarn, " + kr(CONFIG.pris) + "/st." }]
+          : [{ b: "Alla extra kakor är sålda. " }, "Tack!"] }));
+    }
+    box.appendChild(kort);
+    return box;
+  }
+  function bingoKort() {
+    return h("div", { class: "card", style: "margin-top:16px" }, h("p", { class: "kicker", style: "color:var(--muted)", text: "Nästa steg" }),
+      h("h3", { style: "margin:4px 0 6px;font-size:20px", text: "🎟️ Bingolotter" }), h("p", { style: "margin:0", text: CONFIG.bingo }));
   }
 
   /* ---------- Formulär ---------- */
@@ -342,7 +386,13 @@ const CONFIG = {
     if (demo) content.appendChild(h("p", { class: "notice", text: testlage
       ? "Testläge: ingenting sparas och du ska inte swisha. Siffrorna under Översikt är exempel."
       : "Förhandsvisning med exempeldata. Beställningar skickas inte förrän sidan är kopplad till Apps Script." }));
-    content.appendChild(h("div", { style: "margin-top:16px" }, h("h2", { class: "title", text: "Beställ" }),
+    state.visarKvitto = false;
+    if (CONFIG.stangd) {
+      visatKvar = kvarExtra();
+      content.appendChild(stangdHuvud());
+      if (!visatKvar) { content.appendChild(bingoKort()); return; }
+      content.appendChild(h("h2", { class: "title", style: "margin-top:24px", text: "Köp extra kakor" }));
+    } else content.appendChild(h("div", { style: "margin-top:16px" }, h("h2", { class: "title", text: "Beställ" }),
       CONFIG.sistaDag ? h("p", { class: "notice", style: "margin-top:8px" }, "Beställ senast ", h("strong", { text: CONFIG.sistaDag }), ".") : null,
       h("p", { class: "lead", text: fill(CONFIG.intro) })));
 
@@ -363,11 +413,11 @@ const CONFIG = {
 
     // Antal
     var P = CONFIG.produkt;
-    var antalInp = h("input", { type: "number", inputmode: "numeric", id: "antal", min: "0", max: String(CONFIG.maxAntal), value: String(state.antal), "aria-label": "Antal kakor" });
+    var antalInp = h("input", { type: "number", inputmode: "numeric", id: "antal", min: "0", max: String(maxNu()), value: String(Math.min(state.antal, maxNu())), "aria-label": "Antal kakor" });
     var payBig = h("p", { class: "big num" }), paySub = h("p", { class: "sub" });
     var presetBtns = [];
     function setAntal(v) {
-      state.antal = Math.max(0, Math.min(CONFIG.maxAntal, v | 0));
+      state.antal = Math.max(0, Math.min(maxNu(), v | 0));
       antalInp.value = String(state.antal);
       presetBtns.forEach(function (b) { b.btn.setAttribute("aria-pressed", String(b.n === state.antal)); });
       if (state.antal === 0) { payBig.textContent = "Välj antal kakor"; paySub.textContent = ""; }
@@ -380,13 +430,13 @@ const CONFIG = {
     antalInp.addEventListener("change", function () { setAntal(parseInt(antalInp.value, 10) || 0); });
 
     var presets = h("div", { class: "presets", role: "group", "aria-label": "Snabbval" });
-    CONFIG.snabbval.forEach(function (n) {
+    CONFIG.snabbval.filter(function (n) { return n <= maxNu(); }).forEach(function (n) {
       var btn = h("button", { type: "button", class: "preset num", text: String(n), "aria-pressed": "false", onclick: function () { setAntal(n); } });
       presetBtns.push({ n: n, btn: btn }); presets.appendChild(btn);
     });
 
     form.appendChild(h("div", { class: "field" },
-      h("span", { class: "label", text: "Hur många kakor tror ni att ni kan sälja?" }),
+      h("span", { class: "label", text: CONFIG.stangd ? "Hur många extra kakor vill du köpa? (högst " + maxNu() + ")" : "Hur många kakor tror ni att ni kan sälja?" }),
       h("div", { class: "product" }, h("div", { class: "ico", "aria-hidden": "true", text: P.emoji }),
         h("div", null, h("div", { class: "name", text: P.namn }), h("div", { class: "meta", text: P.detalj + " · " + kr(CONFIG.pris) + "/st (rekommenderat försäljningspris)" }))),
       h("div", { class: "stepper" },
@@ -408,8 +458,9 @@ const CONFIG = {
 
     var submit = h("button", { type: "submit", class: "primary", text: "Beställ och gå vidare till Swish" });
     form.appendChild(submit);
-    form.appendChild(h("p", { class: "small", style: "margin:12px 0 0", text: CONFIG.aterbetalning }));
+    if (!CONFIG.stangd) form.appendChild(h("p", { class: "small", style: "margin:12px 0 0", text: CONFIG.aterbetalning }));
     content.appendChild(form);
+    if (CONFIG.stangd) content.appendChild(bingoKort());
 
     function setErr(id, msg) { var e = document.getElementById(id); if (e) e.textContent = msg || ""; }
     function normalizeMobil(s) {
@@ -488,6 +539,7 @@ const CONFIG = {
   }
 
   function renderDone(p, orderId, belopp) {
+    state.visarKvitto = true;
     content.textContent = "";
     var nummer = CONFIG.swish.nummer || (demo ? CONFIG.demoSwish : "");
     var meddelande = (CONFIG.swish.meddelande + " " + orderId).slice(0, 50);
@@ -518,8 +570,8 @@ const CONFIG = {
       swish,
       h("p", { class: "small", style: "margin:14px 0 0", text: "Ordernummer: " + orderId + ". Ta gärna en skärmdump." }),
       h("p", { class: "small", text: "Din beställning räknas som klar när betalningen har kommit in." }),
-      h("p", { text: fill(CONFIG.utlamning) }),
-      h("p", { class: "small", text: CONFIG.aterbetalning }),
+      h("p", { text: CONFIG.stangd ? CONFIG.utlamningStangd : fill(CONFIG.utlamning) }),
+      CONFIG.stangd ? null : h("p", { class: "small", text: CONFIG.aterbetalning }),
       h("p", { class: "small", text: CONFIG.kontakt }),
       h("button", { type: "button", class: "ghost", text: "Gör en ny beställning",
         onclick: function () { state.antal = 0; state.barn = ""; renderForm(); window.scrollTo(0, 0); } })));
