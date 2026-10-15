@@ -15,7 +15,10 @@ var CFG = {
   SPARR_MINUTER: 10,      // ... under så här många minuter
   // Påhittade nummer som inte tas emot (exempelnumret på sidan m.fl.).
   // Nummer som bara är samma siffra efter 07 (t.ex. 0700000000) spärras också.
-  SPARRADE_NUMMER: ["0701234567", "0712345678", "0731234567", "0761234567", "0721234567"]
+  SPARRADE_NUMMER: ["0701234567", "0712345678", "0731234567", "0761234567", "0721234567"],
+  // Taket för hela laget efter stängd försäljning: kartonger × 24 (25 × 24 = 600).
+  // Bara de extra kakorna upp till taket kan köpas. 0 = inget tak.
+  MAX_TOTALT: 600
 };
 
 var FLIK = "Beställningar";
@@ -142,6 +145,12 @@ function hanteraBestallning(e) {
   try { lock.waitLock(20000); } catch (err) { return json({ ok: false, fel: "Många beställer just nu. Försök igen om en stund." }); }
   var id;
   try {
+    if (CFG.MAX_TOTALT) {
+      var kvar = CFG.MAX_TOTALT - raknaBestallt(lag);
+      if (antal > kvar) return json({ ok: false, fel: kvar > 0
+        ? "Det finns bara " + kvar + " extra kakor kvar. Välj högst " + kvar + "."
+        : "Alla extra kakor är sålda. Tack!" });
+    }
     var props = PropertiesService.getScriptProperties();
     var nr = Number(props.getProperty("NASTA_ORDER") || 1);
     props.setProperty("NASTA_ORDER", String(nr + 1));
